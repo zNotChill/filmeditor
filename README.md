@@ -10,8 +10,8 @@ Make FilmEditor yours.
 |-------------------------|-------------------------------------------------------------|
 | 0                       |                                                             |
 | 1                       |                                                             |
-| col                     | The primary color provided by film_editor.main_color        |
-| secol                   | The secondary color provided by film_editor.secondary_color |
+| col                     | The primary color provided by the config.                   |
+| secol                   | The secondary color provided by the config.                 |
 
 > [!IMPORTANT]
 > Selectors such as `{messages::scene_load::invalid_metadata}` internally refer to the config value of `messages.scene_load.invalid_metadata`. You can use these selectors to refer to any value of the config.json file, but the rule is that each nest should be represented using `::` instead of a `.`
