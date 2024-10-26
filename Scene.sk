@@ -1,0 +1,76 @@
+import:
+  java.nio.file.Files
+  java.nio.file.Path
+  java.nio.file.Paths
+
+function Scene_load(name: string):
+  set {scene::name} to {_name}
+  set {scene::currentFrame} to 0
+
+function Scene_loadFile(name: string) :: boolean:
+  set {_path} to Paths.get("filmeditor/scenes/%{_name}%.json")
+  set {_content} to Files.readString({_path})
+  delete {scene::%{_name}%::*}
+  map json {_content} to {-tempjson::*}
+
+  set {_fileName} to {-tempjson::film_editor::name}
+  map json {_content} to {scene::%{_fileName}%::json::*} # Re-map the JSON to the scene's name
+
+  if size of {scene::%{_fileName}%::json::*} is 0:
+    Editor_announce("Scene file {col}%{_fileName}% &fdoes not exist")
+    return false
+
+  if {scene::%{_fileName}%::json::film_editor::version} is not set:
+    Editor_announce("Scene file {col}%{_fileName}% &fcontains invalid metadata (missing version)")
+    return false
+  if {scene::%{_fileName}%::json::film_editor::name} is not set:
+    Editor_announce("Scene file {col}%{_fileName}% &fcontains invalid metadata (missing name)")
+    return false
+
+  if {scene::%{_fileName}%::json::film_editor::version} is not {film_editor::version}:
+    Editor_announce("Scene file {col}%{_fileName}% &fversion is not compatible with the current version of FilmEditor. (Expected {col}%{film_editor::version}%&f, got {col}%{scene::%{_fileName}%::json::film_editor::version}%&f)")
+    return false
+
+  Scene_parseEvents({_fileName}, {_content})
+
+  Editor_announce("Loaded scene JSON for scene {col}%{_fileName}%")
+  return true
+
+function Scene_runEvent(json: objects) :: boolean:
+  broadcast "%{_json::type}%"
+
+function Scene_parseEvents(name: string, json: string) :: boolean:
+  map json {_json} to {_json::*}
+  
+  loop {_json::events::on_tick::*}:
+    add 1 to {_i}
+    set {_tickRunAt} to {_json::events::on_tick::%{_i}%::run_at}
+
+    set {_nonListEventRunOptions::*} to "time"
+    set {_listEventRunOptions::*} to "nodes"
+    loop {_json::events::on_tick::%{_i}%::run::*}:
+      loop {_nonListEventRunOptions::*}:
+        set {_evValue} to {_json::events::on_tick::%{_i}%::run::%loop-value-3%}
+        set {_evTag} to loop-value-3
+
+        if:
+          {_evTag} = "time"
+          {_evValue} is set
+        then:
+          Editor_announce("Setting time of day to {col}%{_evValue}%")
+          Render_timeOfDay({_evValue})
+          
+
+      loop {_listEventRunOptions::*}:
+        set {_evListValue::*} to {_json::events::on_tick::%{_i}%::run::%loop-value-3%::*}
+        set {_evTag} to loop-value-3
+
+        if:
+          {_evTag} = "nodes"
+          {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} is not set
+        then:
+          broadcast "nodes loloooll"
+
+          broadcast "%{_json::events::on_tick::%{_i}%::run::nodes::*}%"
+
+          set {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} to true

@@ -1,0 +1,13 @@
+
+function Camera_runPhysics(ticks: integer):
+  set {_functionLifetime} to 0
+  while {camera::entity} is alive:
+    if {_functionLifetime} >= {_ticks}:
+      stop loop
+
+    set velocity of {camera::entity} to {camera::velocity}
+
+    add 1 to {camera::lifetime}
+    add 1 to {_functionLifetime}
+    set {camera::velocity} to vector(0,0,0)
+    wait 1 tick

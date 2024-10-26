@@ -1,0 +1,86 @@
+
+function Camera_spawn(loc: location, p: player) :: entity:
+  if {camera::entity} is set:
+    kill {camera::entity}
+    delete {camera::*}
+  set {_p}'s gamemode to spectator
+
+  spawn armor stand at {_loc}
+  set {_camera} to last spawned armor stand
+  set {camera::entity} to {_camera}
+
+  Camera_setup({_loc}, {_p}, {_camera})
+
+  set {_p}'s spectator target to {_camera}
+  Render_announce("Camera spawned")
+  return {_camera}
+
+function Camera_setup(loc: location, p: player, camera: entity):
+  set {_nbt} to nbt of {_camera}
+  make {_camera} silent
+  make {_camera} invincible
+  make {_camera} invisible
+  make {_p} invisible
+  set no clip state of {_camera} to true
+  set boolean tag "Tame" of {_nbt} to true
+
+  # Offsetting camera by 0.50977 is not necessary when spectating
+  # It was only necessary when riding a horse, since the player is 0.50977 blocks above the horse's body
+  # teleport {_camera} to {_camera} ~ vector(0, 0.50977, 0)
+  teleport {_camera} to {_camera} ~ vector(0, 0, 0)
+  # set scale attribute of {_camera} to 0
+
+  teleport {_p} to {_loc}
+  make {_p} ride {_camera}
+
+function Camera_move(loc: location, duration: integer):
+  set {_camera} to {camera::entity}
+  set {_location} to {_camera}
+  set {_finalLocation} to {_loc}
+
+  set {_dir} to direction from {_location} to {_finalLocation}
+  set {_vector} to vector from {_dir}
+
+  set {_increment} to {_vector} / {_duration}
+  
+  loop {_duration} times:
+    set {camera::velocity} to {_increment}
+    wait 1 tick
+
+function Camera_moveVector(vector: vector, duration: integer):
+  set {_loc} to location of {camera::entity} ~ {_vector}
+  Camera_move({_loc}, {_duration})
+
+function Camera_setCameraRotation(pitch: number, yaw: number, duration: integer):
+  set {_camera} to {camera::entity}
+  set {_ogPitch} to pitch of {_camera}
+  set {_ogYaw} to yaw of {_camera}
+
+  # Calculate the pitch increment
+  set {_pitchIncrement} to ({_pitch} - {_ogPitch}) / {_duration}
+
+  # Calculate the yaw difference and ensure it takes the shortest path
+  set {_yawDiff} to {_yaw} - {_ogYaw}
+  if {_yawDiff} > 180:
+    subtract 360 from {_yawDiff}
+  else if {_yawDiff} < -180:
+    add 360 to {_yawDiff}
+
+  # Calculate the yaw increment based on the corrected difference
+  set {_yawIncrement} to {_yawDiff} / {_duration}
+
+  # Perform the rotation over the duration
+  loop {_duration} times:
+    set {_loc} to location of {_camera}
+    set pitch of {_loc} to {_ogPitch} + ({_pitchIncrement} * loop-value)
+    set yaw of {_loc} to {_ogYaw} + ({_yawIncrement} * loop-value)
+    teleport {_camera} to {_loc}
+    wait 1 tick
+
+
+function easeInOutQuad(t: number, b: number, c: number, d: number) :: number:
+  set {_t} to {_t} / ({_d} / 2)
+  if {_t} < 1:
+    return {_c} / 2 * {_t} * {_t} + {_b}
+  set {_t} to {_t} - 1
+  return {_c} / 2 * (-1 * {_t} * ({_t} - 2) + 1) + {_b}

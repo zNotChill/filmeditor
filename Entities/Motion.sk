@@ -1,0 +1,23 @@
+
+function Entity_applyGravity(id: string, force: number, groundBuffer: number) :: boolean:
+  if {_force} < 0:
+    return false
+
+  if block {_groundBuffer} blocks below {entities::%{_id}%::mainEntity} is air:
+    add 1 to {entities::%{_id}%::fallingDuration}
+    set {entities::%{_id}%::velocity} to vector(0, ({_force} * -1) * {entities::%{_id}%::fallingDuration}, 0)
+    set {entities::%{_id}%::isFalling} to true
+  else:
+    set {entities::%{_id}%::isFalling} to false
+
+  if block at {entities::%{_id}%::mainEntity} is not passable:
+    set {entities::%{_id}%::velocity} to vector(0,1,0)
+    set {entities::%{_id}%::fallingDuration} to 0
+    set {entities::%{_id}%::isFalling} to false
+  return true
+
+function Entity_moveUp(id: string, distance: number):
+  set {entities::%{_id}%::velocity} to {entities::%{_id}%::velocity} + vector(0, {_distance}, 0)
+
+function Entity_moveDown(id: string, distance: number):
+  set {entities::%{_id}%::velocity} to {entities::%{_id}%::velocity} + vector(0, ({_distance} * -1), 0)

@@ -1,0 +1,79 @@
+on script load:
+  # All are measured in ticks
+  set {-anim::global_interpolation_duration} to 2
+  set {-anim::leg_interpolation_duration} to 2
+  set {-anim::leg_update_interval} to 5
+  set {-anim::arm_update_interval} to 7
+  set {-anim::leg_furthest_back} to quaternion(0.320, 0, 0, 0.950)
+  set {-anim::leg_furthest_forward} to quaternion(-0.320, 0, 0, 0.950)
+
+  set {-anim::arm_furthest_out} to quaternion(0, 0, 0.3, 0.954)
+  set {-anim::arm_furthest_in} to quaternion(0, 0, -0.3, 0.954)
+  set {-anim::arm_stationary} to quaternion(0, 0, 0, 1)
+
+  set {-anim::limb_item} to sand
+  set int tag "custom_model_data" of nbt of {-anim::limb_item} to 1
+
+  set {-anim::torso_item} to sand
+  set int tag "custom_model_data" of nbt of {-anim::torso_item} to 2
+
+  set {-anim::head_item} to sand
+  set int tag "custom_model_data" of nbt of {-anim::head_item} to 3
+
+function PlayerAnim_spawnModel(sloc: location, persist: boolean = false) :: string:
+  set {_id} to "%randomID(6)%"
+
+  kill {player::%{_id}%::list::*}
+  delete {player::%{_id}%::*}
+
+  set {_loc} to {_sloc}
+  # broadcast "Spawning player model with ID %{_id}% at %{_loc}%"
+  set pitch of {_loc} to 0
+  set {player::%{_id}%::offset} to location 0.5 blocks above {_loc}
+  set {_offset} to {player::%{_id}%::offset}
+
+  set {_legHeightOffset} to vector(0,0.7,0)
+
+  # Spawn all the body parts
+
+  set {player::%{_id}%::legLeft} to PlayerAnim_spawnLeg(location 0.125 blocks right of {_offset})
+  set {player::%{_id}%::legRight} to PlayerAnim_spawnLeg(location 0.125 blocks left of {_offset})
+  set {player::%{_id}%::torso} to PlayerAnim_spawnTorso({_offset} ~ {_legHeightOffset})
+  set {player::%{_id}%::armLeft} to PlayerAnim_spawnArm(location 0.35 blocks left of {_offset} ~ {_legHeightOffset})
+  set {player::%{_id}%::armRight} to PlayerAnim_spawnArm(location 0.35 blocks right of {_offset} ~ {_legHeightOffset})
+  set {player::%{_id}%::head} to PlayerAnim_spawnHead({_offset} ~ vector(0,1.3,0))
+
+  set {_legLeft} to {player::%{_id}%::legLeft}
+  set {_legRight} to {player::%{_id}%::legRight}
+  set {_torso} to {player::%{_id}%::torso}
+  set {_armLeft} to {player::%{_id}%::armLeft}
+  set {_armRight} to {player::%{_id}%::armRight}
+  set {_head} to {player::%{_id}%::head}
+  
+  
+  set {_list::*} to {_legLeft}, {_legRight}, {_torso}, {_armLeft}, {_armRight}, {_head}
+  set {player::%{_id}%::list::*} to {_list::*}
+
+  set {_tags::*} to "PlayerModel"
+  if {_persist} = true:
+    add "Persist" to {_tags::*}
+  loop {_list::*}:
+    set string list tag "Tags" of nbt of loop-value to {_tags::*}
+
+  # Set the original locations of the legs
+  set {_originalLeftLegLoc} to location of {_legLeft}
+  set {_originalRightLegLoc} to location of {_legRight}
+  set {player::%{_id}%::originalLeftLegLoc} to {_originalLeftLegLoc}
+  set {player::%{_id}%::originalRightLegLoc} to {_originalRightLegLoc}
+
+  set {player::%{_id}%::footAnchor} to {_loc}
+
+  set {player::%{_id}%::isFalling} to false
+  set {player::%{_id}%::fallingDuration} to 0
+  set {player::%{_id}%::leftLegIsForward} to {_leftLegIsForward}
+
+  set {player::%{_id}%::lifetime} to 1
+
+  Render_announce("Player model spawned with ID <sgt:%{_id}%>{col}&n%{_id}%")
+
+  return {_id}

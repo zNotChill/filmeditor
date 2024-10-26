@@ -1,0 +1,71 @@
+
+# PlayerAnim_applyGravity
+# Apply gravity to the player model
+#
+# @param id: The ID of the player model
+# @param force: The force of gravity
+# @param groundBuffer: The buffer distance between the player model and the ground
+# @return boolean: Whether or not gravity was applied successfully
+
+function PlayerAnim_applyGravity(id: string, force: number, groundBuffer: number) :: boolean:
+  if {_force} < 0:
+    return false
+
+  if block {_groundBuffer} blocks below {player::%{_id}%::footAnchor} is air:
+    add 1 to {player::%{_id}%::fallingDuration}
+    set {player::%{_id}%::velocity} to vector(0, ({_force} * -1) * {player::%{_id}%::fallingDuration}, 0)
+    set {player::%{_id}%::isFalling} to true
+  else:
+    set {player::%{_id}%::isFalling} to false
+
+  if block at {player::%{_id}%::footAnchor} is not passable:
+    set {player::%{_id}%::velocity} to vector(0,1,0)
+    set {player::%{_id}%::fallingDuration} to 0
+    set {player::%{_id}%::isFalling} to false
+  return true
+
+# PlayerAnim_simulateLegMovement
+# Simulate leg movement for the player model
+#
+# @param id: The ID of the player model
+function PlayerAnim_simulateLegMovement(id: string):
+  if mod({player::%{_id}%::lifetime}, {-anim::leg_update_interval}) = 0:
+    set interpolation start of {player::%{_id}%::legLeft} to 0
+    set interpolation start of {player::%{_id}%::legRight} to 0
+    if {player::%{_id}%::leftLegIsForward} = true:
+      set display left rotation of {player::%{_id}%::legLeft} to {-anim::leg_furthest_back}
+      set display left rotation of {player::%{_id}%::legRight} to {-anim::leg_furthest_forward}
+      set {player::%{_id}%::leftLegIsForward} to false
+    else:
+      set display left rotation of {player::%{_id}%::legLeft} to {-anim::leg_furthest_forward}
+      set display left rotation of {player::%{_id}%::legRight} to {-anim::leg_furthest_back}
+      set {player::%{_id}%::leftLegIsForward} to true
+
+function PlayerAnim_moveUp(id: string, distance: number):
+  set {player::%{_id}%::velocity} to {player::%{_id}%::velocity} + vector(0, {_distance}, 0)
+
+function PlayerAnim_moveDown(id: string, distance: number):
+  set {player::%{_id}%::velocity} to {player::%{_id}%::velocity} + vector(0, ({_distance} * -1), 0)
+
+function PlayerAnim_setHeadRotation(id: string, rotation: quaternion):
+  set display right rotation of {player::%{_id}%::head} to {_rotation}
+
+function PlayerAnim_setBodyRotation(id: string, yaw: number):
+  loop {player::%{_id}%::list::*}:
+    set {_loc} to location of loop-value
+    set yaw of {_loc} to {_yaw}
+    teleport loop-value to {_loc}
+
+  set {player::%{_id}%::yaw} to {_yaw}
+
+function PlayerAnim_setBodyRotationQuat(id: string, rotation: quaternion):
+  loop {player::%{_id}%::list::*}:
+    set display right rotation of loop-value to (display right rotation of loop-value) + {_rotation}
+
+function PlayerAnim_getFacingVector(id: string) :: vector:
+  set {_yaw} to yaw of {player::%{_id}%::head}
+  set {_pitch} to pitch of {player::%{_id}%::head}
+  set {_x} to sin({_yaw}) * -1
+  set {_y} to sin({_pitch})
+  set {_z} to cos({_yaw})
+  return vector({_x}, {_y}, {_z}) * -1

@@ -1,0 +1,49 @@
+
+function PlayerAnim_spawnLeg(loc: location) :: entity:
+  spawn item display at {_loc}
+  set {_display} to last spawned item display
+  set display brightness of {_display} to displayBrightness(10,10)
+  set display scale of {_display} to vector(0.25, 1.6, 0.25)
+  set display item of {_display} to {-anim::limb_item}
+  set display translation of {_display} to vector(0,0.3,0)
+  set interpolation duration of {_display} to {-anim::leg_interpolation_duration}
+  set teleport duration of {_display} to {-anim::leg_interpolation_duration}
+
+  return {_display}
+
+function PlayerAnim_spawnTorso(loc: location) :: entity:
+  spawn item display at {_loc}
+  set {_display} to last spawned item display
+  set display brightness of {_display} to displayBrightness(10,10)
+  set display scale of {_display} to vector(0.5, 0.77, 0.25)
+  set display item of {_display} to {-anim::torso_item}
+  set interpolation duration of {_display} to {-anim::global_interpolation_duration}
+  set teleport duration of {_display} to {-anim::global_interpolation_duration}
+
+  return {_display}
+
+function PlayerAnim_spawnArm(loc: location) :: entity:
+  spawn item display at {_loc}
+  set {_display} to last spawned item display
+  set display brightness of {_display} to displayBrightness(10,10)
+  set display scale of {_display} to vector(0.2, 1.4, 0.25)
+  set display item of {_display} to {-anim::limb_item}
+  set display translation of {_display} to vector(0,0.35,0)
+  set interpolation duration of {_display} to {-anim::global_interpolation_duration}
+  set teleport duration of {_display} to {-anim::global_interpolation_duration}
+
+  return {_display}
+
+function PlayerAnim_spawnHead(loc: location) :: entity:
+  spawn item display at {_loc}
+  set {_display} to last spawned item display
+  set display brightness of {_display} to displayBrightness(10,10)
+  set display scale of {_display} to vector(0.5, 0.5, 0.5)
+  set display item of {_display} to {-anim::head_item}
+  set interpolation duration of {_display} to {-anim::global_interpolation_duration}
+  set teleport duration of {_display} to {-anim::global_interpolation_duration}
+
+  return {_display}
+
+function PlayerAnim_setArmRotation(id: string, arm: string, rotation: quaternion):
+  set display right rotation of {player::%{_id}%::%{_arm}%} to {_rotation}

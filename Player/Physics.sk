@@ -1,0 +1,24 @@
+
+function PlayerAnim_runPhysics(id: string, ticks: integer):
+
+  set {_legHeightOffset} to vector(0,0.7,0)
+  set {_functionLifetime} to 0
+  while {player::%{_id}%::torso} is alive:
+    if {_functionLifetime} >= {_ticks}:
+      stop loop
+    # set {player::%{_id}%::velocity} to vector(0,0,0)
+    set {player::%{_id}%::footAnchor} to location of {player::%{_id}%::torso} ~ ({_legHeightOffset} * -1) ~ vector(0,-0.3,0)
+
+    # PlayerAnim_applyGravity({_id}, 0.02, 0.1)
+    # PlayerAnim_simulateLegMovement({_id})
+
+    loop {player::%{_id}%::list::*}: # Apply velocity to all entities
+      teleport loop-value to location of loop-value ~ {player::%{_id}%::velocity}
+
+    add 1 to {player::%{_id}%::lifetime}
+    add 1 to {_functionLifetime}
+    set {player::%{_id}%::velocity} to vector(0,0,0)
+    set {player::%{_id}%::fallingDuration} to 4
+    wait 1 tick
+
+  # Render_announce("Physics ran for %{_functionLifetime}% ticks")

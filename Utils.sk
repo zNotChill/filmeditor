@@ -1,0 +1,36 @@
+
+function getExtremes(pos1: location, pos2: location) :: locations:
+  set {_lowestCorner} to {_pos1}
+  set {_highestCorner} to {_pos2}
+  if y coord of {_pos2} < y coord of {_pos1}:
+    set {_lowestCorner} to {_pos2}
+    set {_highestCorner} to {_pos1}
+  return {_lowestCorner}, {_highestCorner}
+
+# Check if a location is within 2 locations
+function CheckAABB(loc: location, corner1: location, corner2: location) :: boolean:
+  set {_extremes::*} to getExtremes({_corner1}, {_corner2})
+  set {_lowest} to {_extremes::1}
+  set {_highest} to {_extremes::2}
+  if:
+    x coord of {_loc} >= x coord of {_lowest}
+    x coord of {_loc} <= x coord of {_highest}
+    y coord of {_loc} >= y coord of {_lowest}
+    y coord of {_loc} <= y coord of {_highest}
+    z coord of {_loc} >= z coord of {_lowest}
+    z coord of {_loc} <= z coord of {_highest}
+  then:
+    return true
+  return false
+
+function randomID(length: integer = 6) :: integer:
+  set {_id} to random integer between (10^{_length}) and (10^({_length}+1))
+  return {_id}
+
+function isWithin(value: number, min: number, max: number) :: boolean:
+  if:
+    {_value} >= {_min}
+    {_value} <= {_max}
+  then:
+    return true
+  return false

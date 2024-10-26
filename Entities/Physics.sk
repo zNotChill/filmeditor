@@ -1,0 +1,24 @@
+
+function Entity_runPhysics(id: string, ticks: integer):
+  set {_functionLifetime} to 0
+  while {entities::%{_id}%::mainEntity} is alive:
+    if {_functionLifetime} >= {_ticks}:
+      stop loop
+
+    loop {entities::%{_id}%::list::*}: # Apply velocity to all entities
+      teleport loop-value to location of loop-value ~ {entities::%{_id}%::velocity}
+
+    add 1 to {entities::%{_id}%::lifetime}
+    add 1 to {_functionLifetime}
+    set {entities::%{_id}%::velocity} to vector(0,0,0)
+    set {entities::%{_id}%::fallingDuration} to 4
+    wait 1 tick
+
+  # Render_announce("Physics ran for %{_functionLifetime}% ticks")
+
+function Entity_syncYCoord(id: string):
+  set {_y} to y coordinate of {entities::%{_id}%::mainEntity}
+  loop {entities::%{_id}%::list::*}:
+    set {_loc} to location of loop-value
+    set y coordinate of {_loc} to {_y}
+    teleport loop-value to {_loc}

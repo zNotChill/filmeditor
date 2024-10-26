@@ -1,0 +1,177 @@
+
+function testmovie(p: player):
+  Render_reset()
+  Render_beginFrame()
+  Render_timeOfDay("0:00")
+  
+  # Create a camera
+  set {_cameraLoc} to location(-354.5, 71, 167.5, world "world", 134.0, -2.7)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  set {_characterLoc} to location(-361.5, 72, 160.5, world "world", -52, -6)
+  set {_character} to PlayerAnim_spawnModel({_characterLoc}, true)
+
+  PlayerAnim_runPhysics({_character}, 200)
+
+  wait 2 seconds
+  
+  Render_beginFrame()
+  Render_timeOfDay("3:00")
+  
+  # Create a camera
+  set {_cameraLoc} to location(-368.5, 75, 168.5, world "world", -138.8, 15.5)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  wait 2 seconds
+
+  Render_beginFrame()
+  Render_timeOfDay("6:00")
+
+  # Create a camera
+  set {_cameraLoc} to location(-369.5, 74, 154.5, world "world", -53.1, 10.8)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  wait 2 seconds
+
+  Render_beginFrame()
+  Render_timeOfDay("9:00")
+
+  # Create a camera
+  set {_cameraLoc} to location(-357.5, 75, 149.5, world "world", 20.3, 13.4)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+function movie2(p: player):
+  Render_reset()
+  Render_beginFrame()
+  Render_timeOfDay("18:25")
+
+  set {_cameraLoc} to location(-502.5, 63, 236.5, world "world", 86.7, 0)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  set {_characterLoc} to location(-519.5, 61.5, 237.5, world "world", 90, 0)
+  set {_character} to PlayerAnim_spawnModel({_characterLoc}, true)
+
+  PlayerAnim_setHeadRotation({_character}, quaternion(-0.140, 0, 0, 0.990) rotated by PlayerAnim_getFacingVector({_character}))
+
+  set {_floatie} to Entities_spawnFloatie({_characterLoc} ~ vector(0,1.5,0), 0.8, 6, (yellow concrete, white concrete), 0.167)
+
+  add 1 to {_lifetime}
+  while {player::%{_character}%::torso} is alive:
+    set display left rotation of {player::%{_character}%::armLeft} to quaternion(-0.3, -0.3, 0.5, 0.722) rotated by PlayerAnim_getFacingVector({_character})
+    set display left rotation of {player::%{_character}%::armRight} to quaternion(-0.3, -0.3, -0.5, 0.722) rotated by PlayerAnim_getFacingVector({_character})
+    if mod({_lifetime}, 20) = 0:
+      if {_movingUp} = true:
+        set {_movingUp} to false
+      else:
+        set {_movingUp} to true
+
+    if mod({_lifetime}, {-anim::arm_update_interval}) = 0:
+      run task 1 ticks later:
+        Entity_applyGravity({_floatie}, 0.01, 0)
+        Entity_moveUp({_floatie}, 0.03)
+
+      PlayerAnim_applyGravity({_character}, 0.02, -1)
+      PlayerAnim_moveUp({_character}, 0.05)
+      PlayerAnim_simulateLegMovement({_character})
+
+      set interpolation start of {player::%{_character}%::armLeft} to 0
+      set interpolation start of {player::%{_character}%::armRight} to 0
+      Entity_runPhysics({_floatie}, 20)
+      PlayerAnim_runPhysics({_character}, 20)
+
+    add 1 to {_lifetime}
+    wait 1 tick
+
+function jaja(p: player):
+  Render_reset()
+  Render_beginFrame()
+  Render_timeOfDay("18:25")
+  Render_startTimer()
+
+  set {_cameraLoc} to location(-415.5, 88, 368.5, world "world", -90, 0)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  Camera_moveVector(vector(7, 0, 0), 100)
+
+  Render_registerEvent("CameraRot1")
+  Render_registerEvent("Move1")
+  Render_registerEvent("Scene2")
+  Render_registerEvent("Scene3")
+
+  set block at location(-409,88,373) to dark_oak_door[open=false]
+
+  # Left batch
+  Entities_spawnBall(location(-405.5, 88.1, 377.5), 0.5, 6, (purpur block), 0.8)
+  Entities_spawnBall(location(-405.5, 88.1, 380.0), 0.75, 6, (purpur pillar), 0.9)
+  Entities_spawnBall(location(-407.5, 88.1, 378.5), 0.4, 6, (lime concrete), 0.4)
+
+  # Right batch
+  Entities_spawnBall(location(-412.0, 88.1, 382.5), 0.6, 6, (lime concrete), 0.6)
+  Entities_spawnBall(location(-410.5, 88.1, 383.5), 0.5, 5, (purpur pillar), 0.5)
+  Entities_spawnBall(location(-411.5, 88.1, 385.5), 0.75, 6, (stripped crimson hyphae), 0.9)
+
+  # Roof batch
+  Entities_spawnBall(location(-409.5, 91.85, 379.5), 0.75, 6, (purpur block), 0.9)
+  Entities_spawnBall(location(-407.5, 91.85, 381.5), 0.75, 6, (stripped crimson hyphae), 0.9)
+  Entities_spawnBall(location(-409.5, 91.85, 385.5), 0.75, 6, (purpur pillar), 0.9)
+
+  while {_camera} is alive:
+    if:
+      isWithin(Render_getTimer(), 4, 4.5)
+      Render_isEventAcknowledged("CameraRot1") = false
+    then:
+      Render_acknowledgeEvent("CameraRot1")
+      Camera_setCameraRotation(-0, -0, 40)
+
+    if:
+      isWithin(Render_getTimer(), 7, 7.5)
+      Render_isEventAcknowledged("Move1") = false
+    then:
+      Render_acknowledgeEvent("Move1")
+      Camera_moveVector(vector(0, 0, 10), 100)
+      
+      run task 20 ticks later:
+        set block at location(-409,88,373) to dark_oak_door[open=true]
+
+    if:
+      isWithin(Render_getTimer(), 10, 10.5)
+      Render_isEventAcknowledged("Scene2") = false
+    then:
+      Render_acknowledgeEvent("Scene2")
+      teleport {camera::entity} to location(-449.5, 90, 386.5, world "world", 25, 0)
+      Camera_moveVector(vector(-3, 0, -10), 200)
+
+    if:
+      isWithin(Render_getTimer(), 13, 13.5)
+      Render_isEventAcknowledged("Scene3") = false
+    then:
+      Render_acknowledgeEvent("Scene3")
+      Render_timeOfDay("21:00")
+      teleport {camera::entity} to location(-496.5, 139, 399.5, world "world", 0, 0)
+      wait 3 ticks
+      teleport {_p} to {camera::entity}
+      set {_p}'s spectator target to {camera::entity}
+      Camera_moveVector(vector(0, 0, 2), 200)
+
+    Camera_runPhysics(1)
+    wait 1 tick
+
+function infiniteelevator(p: player):
+  Render_reset()
+  Render_beginFrame()
+
+  set {_cameraLoc} to location(-405.5, 239, -205.5, world "world", 90, 90)
+  set {_camera} to Camera_spawn({_cameraLoc}, {_p})
+
+  while {_camera} is alive:
+
+    set {camera::velocity} to vector(0, -2, 0)
+
+    if y coord of {camera::entity} < 163:
+      set {_p}'s spectator target to {_p}
+      wait 4 ticks
+      teleport {camera::entity} to {_cameraLoc}
+      set {_p}'s spectator target to {camera::entity}
+
+    Camera_runPhysics(1)
+    wait 1 tick

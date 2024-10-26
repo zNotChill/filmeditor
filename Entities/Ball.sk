@@ -1,0 +1,32 @@
+
+# TODO: Fix clipping
+function Entities_spawnBall(loc: location, size: number = 1, density: number = 2, blocks: items = (yellow concrete), scale: number = 0.5) :: string:
+  set {_id} to "%randomID(6)%"
+  if {entities::%{_id}%::list::*} is set:
+    kill {entities::%{_id}%::list::*}
+    delete {entities::%{_id}%::list::*}
+  set {_circle::*} to sphere with radius {_size} and density {_density}
+
+  set yaw of {_loc} to 0
+  set pitch of {_loc} to 0
+  loop {_circle::*}:
+    add 1 to {_i}
+    add 1 to {_blockIndex}
+    spawn item display at {_loc} ~ loop-value
+    set {_display} to last spawned item display
+    set display scale of {_display} to vector({_scale}, {_scale}, {_scale})
+
+    if {_blockIndex} > size of {_blocks::*}:
+      set {_blockIndex} to 1
+
+    set {_block} to {_blockIndex}th element of {_blocks::*}
+    set display item of {_display} to {_block}
+
+    set interpolation duration of {_display} to {-anim::global_interpolation_duration}
+    set teleport duration of {_display} to {-anim::global_interpolation_duration}
+    add {_display} to {_displays::*}
+
+  set {entities::%{_id}%::list::*} to {_displays::*}
+  set {entities::%{_id}%::mainEntity} to a random element out of {_displays::*}
+
+  return {_id}

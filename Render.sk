@@ -1,0 +1,66 @@
+
+function Render_reset():
+  delete {render::*}
+  kill all entities where [input is not a player]
+  Render_announce("Reset")
+
+function Render_beginFrame():
+  delete {render::*}
+  
+  set {_ents} to 0
+  set {_ignoredEnts} to 0
+  loop all entities:
+    if loop-entity is a player:
+      continue
+    if string list tag "Tags" of nbt of loop-entity contains "Persist":
+      add 1 to {_ignoredEnts}
+      continue
+    add 1 to {_ents}
+    kill loop-entity
+
+  Render_announce("Killed %{_ents}% entities and ignored %{_ignoredEnts}% persisting entities")
+  Render_announce("Frame started")
+
+function Render_startTimer():
+  set {render::timer} to 0
+  set {render::isTimerRunning} to true
+  set {_id} to "%randomID(6)%"
+  set {render::timerID} to {_id}
+
+  Render_announce("Timer started")
+  while {render::isTimerRunning}:
+    if {render::timerID} is not {_id}:
+      # A new timer has been started, avoids multiple timers running at once
+      Render_announce("A new timer has been started, stopping current timer and using new one")
+      stop
+    add 0.05 to {render::timer}
+    wait 1 tick
+
+function Render_stopTimer():
+  set {render::isTimerRunning} to false
+  Render_announce("Timer stopped")
+
+function Render_getTimer() :: number:
+  return {render::timer}
+
+function Render_timeOfDay(time: string):
+  set time of world "world" to ("%{_time}%" parsed as time)
+
+on server list ping:
+  set the motd to "<##237fff>Render Server%nl%&fNo ongoing renders."
+
+command /wipeallentities:
+  trigger:
+    kill all entities where [input is not a player]
+    Render_announce("Wiped all entities")
+
+function Render_registerEvent(event: string):
+  set {render::event::%{_event}%::acknowledged} to false
+  set {render::event::%{_event}%::acknowledged_at} to 0
+
+function Render_acknowledgeEvent(event: string):
+  set {render::event::%{_event}%::acknowledged} to true
+  set {render::event::%{_event}%::acknowledged_at} to Render_getTimer()
+
+function Render_isEventAcknowledged(event: string) :: boolean:
+  return {render::event::%{_event}%::acknowledged}

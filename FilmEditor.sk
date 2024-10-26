@@ -1,0 +1,57 @@
+
+import:
+  java.io.IOException
+  java.io.InputStream
+  java.net.URI
+  java.nio.file.Files
+  java.nio.file.Paths
+  java.util.ArrayList
+
+on script load:
+  set {film_editor::version} to 1
+
+function Render_announce(str: string):
+  replace all "{col}" in {_str} with "<##237fff>"
+  broadcast formatted "<##237fff>[RENDER] &f%{_str}%"
+
+function Editor_announce(str: string):
+  replace all "{col}" in {_str} with "<##6ba7fa>"
+  broadcast formatted "<##6ba7fa>[FILMEDITOR] &f%{_str}%"
+
+# Plugin Checker/Updater
+
+function Utils_checkPlugins():
+  set {_plugins::*} to loaded plugins
+  clear {_notInstalled::*}
+
+  set {_requiredPlugins::*} to "Biosphere2", "SkBee", "SkQuery", "skript-reflect", "SkriptJSON"
+
+  set {_requiredPlugins::Biosphere2::download_url} to "https://github.com/bi0qaw/biosphere2/releases/download/1.0.2/biosphere2-1.0.2.jar"
+  set {_requiredPlugins::SkBee::download_url} to "https://github.com/ShaneBeee/SkBee/releases/download/3.6.1/SkBee-3.6.1.jar"
+  set {_requiredPlugins::SkQuery::download_url} to "https://github.com/SkQuery/SkQuery/releases/download/4.1.10/SkQuery-4.1.10.jar"
+  set {_requiredPlugins::skript-reflect::download_url} to "https://github.com/SkriptLang/skript-reflect/releases/download/v2.5.1/skript-reflect-2.5.1.jar"
+  set {_requiredPlugins::SkriptJSON::download_url} to "https://github.com/btk5h/skript-json/releases/download/v1.1.1/skript-json-1.1.1.jar"
+
+  Editor_announce("Checking for required Skript addons...")
+
+  loop {_requiredPlugins::*}: # Check if all required plugins are installed
+    if {_plugins::*} does not contain loop-value:
+      add loop-value to {_notInstalled::*}
+
+  if size of {_notInstalled::*} is greater than 0:
+    Editor_announce("The following Skript addon dependencies are not installed: %{_notInstalled::*}%")
+    # Auto install
+    Editor_announce("Attempting to install missing dependencies...")
+    loop {_notInstalled::*}:
+      set {_jarName} to {_requiredPlugins::%loop-value%::download_url}
+      set {_split::*} to split {_jarName} by "/"
+      set {_jarName} to {_split::%size of {_split::*}%}
+      Utils_downloadFromURL({_requiredPlugins::%loop-value%::download_url}, "plugins/%{_jarName}%.jar")
+      Editor_announce("Installed %loop-value%")
+    stop
+
+  Editor_announce("All required Skript addons are installed")
+
+function Utils_downloadFromURL(url: string, path: string) :: number:
+  set {_download} to URI.create({_url}).toURL().openStream()
+  set {_bytes} to Files.copy({_download}, Paths.get({_path}))
