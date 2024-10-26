@@ -16,24 +16,25 @@ function Scene_loadFile(name: string) :: boolean:
   set {_fileName} to {-tempjson::film_editor::name}
   map json {_content} to {scene::%{_fileName}%::json::*} # Re-map the JSON to the scene's name
 
-  if size of {scene::%{_fileName}%::json::*} is 0:
-    Editor_announce("Scene file {col}%{_fileName}% &fdoes not exist")
+  # if size of {scene::%{_fileName}%::json::*} is 0:
+  if {_content} is not set:
+    Editor_announce(formatConfigValue("messages::scene_load::does_not_exist", {_name}))
     return false
 
   if {scene::%{_fileName}%::json::film_editor::version} is not set:
-    Editor_announce("Scene file {col}%{_fileName}% &fcontains invalid metadata (missing version)")
+    Editor_announce(formatConfigValue("messages::scene_load::missing_version"))
     return false
   if {scene::%{_fileName}%::json::film_editor::name} is not set:
-    Editor_announce("Scene file {col}%{_fileName}% &fcontains invalid metadata (missing name)")
+    Editor_announce(formatConfigValue("messages::scene_load::missing_name"))
     return false
 
   if {scene::%{_fileName}%::json::film_editor::version} is not {film_editor::version}:
-    Editor_announce("Scene file {col}%{_fileName}% &fversion is not compatible with the current version of FilmEditor. (Expected {col}%{film_editor::version}%&f, got {col}%{scene::%{_fileName}%::json::film_editor::version}%&f)")
+    Editor_announce(formatConfigValue("messages::scene_load::incompatible", {film_editor::version}, {scene::%{_fileName}%::json::film_editor::version}))
     return false
 
   Scene_parseEvents({_fileName}, {_content})
 
-  Editor_announce("Loaded scene JSON for scene {col}%{_fileName}%")
+  Editor_announce(formatConfigValue("messages::scene_load::success", {_fileName}))
   return true
 
 function Scene_runEvent(json: objects) :: boolean:

@@ -34,3 +34,30 @@ function isWithin(value: number, min: number, max: number) :: boolean:
   then:
     return true
   return false
+
+# Turns "{messages::scene_load::invalid_metadata} {secol}(missing version)"
+# into "Scene file beans contains invalid metadata. (missing version)"
+function formatConfigString(string: string, 0: string = "", 1: string = "") :: string:
+  set {_str} to "%{_string}%"
+  
+  # shittening
+  set {_split::*} to {_str} split by "{"
+
+  # Make it so the config file can read and use different config values
+  # {messages::scene_load::invalid_metadata} would be messages.scene_load.invalid_metadata!!
+  loop {_split::*}:
+    set {_split2::*} to loop-value split by "}"
+    set {_jsonSelector} to {_split2::1}
+    set {_configValue} to {film_editor::config::%{_jsonSelector}%}
+    replace all "{%{_jsonSelector}%}" in {_str} with {_configValue}
+
+  replace all "{col}" in {_str} with {film_editor::color}
+  replace all "{secol}" in {_str} with {film_editor::color2}
+
+  replace all "{0}" in {_str} with {_0}
+  replace all "{1}" in {_str} with {_1}
+
+  return formatted {_str}
+
+function formatConfigValue(string: string, 0: string = "", 1: string = "") :: string:
+  return formatConfigString({film_editor::config::%{_string}%}, {_0}, {_1})

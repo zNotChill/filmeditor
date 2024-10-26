@@ -9,14 +9,23 @@ import:
 
 on script load:
   set {film_editor::version} to 1
+  Config_load()
+  Utils_checkPlugins()
+
 
 function Render_announce(str: string):
   replace all "{col}" in {_str} with "<##237fff>"
-  broadcast formatted "<##237fff>[RENDER] &f%{_str}%"
+  broadcast formatted "%{film_editor::color2}%[RENDER] &f%{_str}%"
 
 function Editor_announce(str: string):
   replace all "{col}" in {_str} with "<##6ba7fa>"
-  broadcast formatted "<##6ba7fa>[FILMEDITOR] &f%{_str}%"
+  broadcast formatted "%{film_editor::color}%[FILMEDITOR] &f%{_str}%"
+
+on server list ping:
+  set the motd to "%{film_editor::color}%&lFILMEDITOR %{film_editor::color2}%v%{film_editor::version}%"
+
+on unknown command with priority highest:
+  set the unknown command message to "&fUnknown command. Type &b/filmhelp &ffor help."
 
 # Plugin Checker/Updater
 
@@ -24,34 +33,65 @@ function Utils_checkPlugins():
   set {_plugins::*} to loaded plugins
   clear {_notInstalled::*}
 
-  set {_requiredPlugins::*} to "Biosphere2", "SkBee", "SkQuery", "skript-reflect", "SkriptJSON"
+  set {_requiredPlugins::*} to "Biosphere2", "SkBee", "SkQuery", "skript-reflect", "SkriptJSON", "Skuishy"
 
   set {_requiredPlugins::Biosphere2::download_url} to "https://github.com/bi0qaw/biosphere2/releases/download/1.0.2/biosphere2-1.0.2.jar"
   set {_requiredPlugins::SkBee::download_url} to "https://github.com/ShaneBeee/SkBee/releases/download/3.6.1/SkBee-3.6.1.jar"
   set {_requiredPlugins::SkQuery::download_url} to "https://github.com/SkQuery/SkQuery/releases/download/4.1.10/SkQuery-4.1.10.jar"
   set {_requiredPlugins::skript-reflect::download_url} to "https://github.com/SkriptLang/skript-reflect/releases/download/v2.5.1/skript-reflect-2.5.1.jar"
   set {_requiredPlugins::SkriptJSON::download_url} to "https://github.com/btk5h/skript-json/releases/download/v1.1.1/skript-json-1.1.1.jar"
+  set {_requiredPlugins::Skuishy::download_url} to "https://cdn.modrinth.com/data/hqhzEibg/versions/xiJlirQQ/Skuishy-2.8-all.jar"
 
-  Editor_announce("Checking for required Skript addons...")
+  Editor_announce(formatConfigValue("messages::dependencies::checking"))
 
   loop {_requiredPlugins::*}: # Check if all required plugins are installed
     if {_plugins::*} does not contain loop-value:
       add loop-value to {_notInstalled::*}
 
   if size of {_notInstalled::*} is greater than 0:
-    Editor_announce("The following Skript addon dependencies are not installed: %{_notInstalled::*}%")
+    set {_notInstalledString} to join {_notInstalled::*} with ", "
+    Editor_announce(formatConfigValue("messages::dependencies::missing", {_notInstalledString}))
     # Auto install
-    Editor_announce("Attempting to install missing dependencies...")
+    Editor_announce(formatConfigValue("messages::dependencies::installing"))
     loop {_notInstalled::*}:
       set {_jarName} to {_requiredPlugins::%loop-value%::download_url}
       set {_split::*} to split {_jarName} by "/"
       set {_jarName} to {_split::%size of {_split::*}%}
       Utils_downloadFromURL({_requiredPlugins::%loop-value%::download_url}, "plugins/%{_jarName}%.jar")
-      Editor_announce("Installed %loop-value%")
+      Editor_announce(formatConfigValue("messages::dependencies::installed_dep", loop-value))
     stop
 
-  Editor_announce("All required Skript addons are installed")
+  Editor_announce(formatConfigValue("messages::dependencies::finished"))
 
 function Utils_downloadFromURL(url: string, path: string) :: number:
   set {_download} to URI.create({_url}).toURL().openStream()
   set {_bytes} to Files.copy({_download}, Paths.get({_path}))
+
+# ############# #
+# Config Loader #
+# ############# #
+
+function Config_load() :: boolean:
+  set {_path} to Paths.get("filmeditor/config.json")
+
+  set {_content} to Files.readString({_path})
+  map json {_content} to {film_editor::config::*}
+  map json {_content} to {_conf::*}
+
+  if {_content} is not set:
+    Editor_announce(formatConfigValue("messages::config::does_not_exist"))
+    return false
+
+  # Check for invalid metadata
+  if {_conf::film_editor::version} is not set:
+    Editor_announce(formatConfigValue("messages::config::missing_version"))
+    return false
+  if {_conf::film_editor::version} is not {film_editor::version}:
+    Editor_announce(formatConfigValue("messages::config::incompatible", {film_editor::version}, {_conf::film_editor::version}))
+    return false
+
+  set {film_editor::color} to "<%{_conf::film_editor::main_color}%>"
+  set {film_editor::color2} to "<%{_conf::film_editor::secondary_color}%>"
+
+  Editor_announce(formatConfigValue("messages::config::success"))
+  return true

@@ -46,9 +46,6 @@ function Render_getTimer() :: number:
 function Render_timeOfDay(time: string):
   set time of world "world" to ("%{_time}%" parsed as time)
 
-on server list ping:
-  set the motd to "<##237fff>Render Server%nl%&fNo ongoing renders."
-
 command /wipeallentities:
   trigger:
     kill all entities where [input is not a player]
