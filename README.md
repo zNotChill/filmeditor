@@ -40,4 +40,5 @@ Make FilmEditor yours.
       "incompatible": "&fConfig file version is incompatible with this version of {col}FilmEditor. {messages::expected_value}"
     }
   }
-}```
+}
+```
