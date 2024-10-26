@@ -14,15 +14,13 @@ on script load:
 
 
 function Render_announce(str: string):
-  replace all "{col}" in {_str} with "<##237fff>"
   broadcast formatted "%{film_editor::color2}%[RENDER] &f%{_str}%"
 
 function Editor_announce(str: string):
-  replace all "{col}" in {_str} with "<##6ba7fa>"
   broadcast formatted "%{film_editor::color}%[FILMEDITOR] &f%{_str}%"
 
 on server list ping:
-  set the motd to "%{film_editor::color}%&lFILMEDITOR %{film_editor::color2}%v%{film_editor::version}%"
+  set the motd to formatted "%{film_editor::color}%&lFILMEDITOR %{film_editor::color2}%v%{film_editor::version}%"
 
 on unknown command with priority highest:
   set the unknown command message to "&fUnknown command. Type &b/filmhelp &ffor help."
