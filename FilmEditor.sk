@@ -4,6 +4,9 @@ import:
   java.io.InputStream
   java.net.URI
   java.nio.file.Files
+  java.nio.file.Path
+  java.io.File
+  
   java.nio.file.Paths
   java.util.ArrayList
 
@@ -12,6 +15,10 @@ on script load:
   Config_load()
   Utils_checkPlugins()
 
+  set {film_editor::server_path} to new File(".").getCanonicalPath()
+
+function Server_getPath() :: string:
+  return {film_editor::server_path}
 
 function Render_announce(str: string):
   broadcast formatted "%{film_editor::color2}%[RENDER] &f%{_str}%"
@@ -31,7 +38,7 @@ function Utils_checkPlugins():
   set {_plugins::*} to loaded plugins
   clear {_notInstalled::*}
 
-  set {_requiredPlugins::*} to "Biosphere2", "SkBee", "SkQuery", "skript-reflect", "SkriptJSON", "Skuishy"
+  set {_requiredPlugins::*} to "Biosphere2", "SkBee", "SkQuery", "skript-reflect", "SkriptJSON", "Skuishy", "SkHttp"
 
   set {_requiredPlugins::Biosphere2::download_url} to "https://github.com/bi0qaw/biosphere2/releases/download/1.0.2/biosphere2-1.0.2.jar"
   set {_requiredPlugins::SkBee::download_url} to "https://github.com/ShaneBeee/SkBee/releases/download/3.6.1/SkBee-3.6.1.jar"
@@ -39,6 +46,7 @@ function Utils_checkPlugins():
   set {_requiredPlugins::skript-reflect::download_url} to "https://github.com/SkriptLang/skript-reflect/releases/download/v2.5.1/skript-reflect-2.5.1.jar"
   set {_requiredPlugins::SkriptJSON::download_url} to "https://github.com/btk5h/skript-json/releases/download/v1.1.1/skript-json-1.1.1.jar"
   set {_requiredPlugins::Skuishy::download_url} to "https://cdn.modrinth.com/data/hqhzEibg/versions/xiJlirQQ/Skuishy-2.8-all.jar"
+  set {_requiredPlugins::SkHttp::download_url} to "https://cdn.modrinth.com/data/4PKsHCki/versions/N5RqZp5W/SkHttp-1.5-all.jar"
 
   Editor_announce(formatConfigValue("messages::dependencies::checking"))
 

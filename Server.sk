@@ -1,0 +1,102 @@
+import:
+  java.nio.file.Files
+  java.nio.file.Path
+  java.nio.file.Paths
+
+# Prevent backtracking to the root directory
+function prevent_backtracking(path: string) :: string:
+  if {_path} contains "..":
+    replace all ".." in {_path} with ""
+  if {_path} starts with "/":
+    replace first "/" in {_path} with ""
+  return {_path}
+
+on load:
+  set {_port} to 9158
+  set {film_editor::server} to new http server with port {_port}
+
+  Editor_announce(formatConfigValue("messages::webserver::started", "%{_port}%"))
+
+  make endpoint using {film_editor::server}:
+    method: "GET"
+    path: "scene"
+    trigger:
+      set {_r} to last exchange
+      set {_path} to parameter of {_r} by key "path"
+
+      if {_path} is not set:
+        respond with code 400 and message "Missing 'path' parameter"
+        stop
+      set {_path} to prevent_backtracking({_path})
+
+      set {_path} to Paths.get("filmeditor/scenes/%{_path}%.json")
+      set {_content} to Files.readString({_path})
+
+      if {_content} is not set:
+        respond with code 404 and message "Scene not found"
+        stop
+
+      respond with code 200 and message {_content}
+
+  make endpoint using {film_editor::server}:
+    method: "GET"
+    path: "config"
+    trigger:
+      set {_path} to Paths.get("filmeditor/config.json")
+      set {_content} to Files.readString({_path})
+
+      if {_content} is not set:
+        respond with code 404 and message "Config not found"
+        stop
+
+      respond with code 200 and message {_content}
+
+  make endpoint using {film_editor::server}:
+    method: "GET"
+    path: "files"
+    trigger:
+      set {_files::*} to Files_recGetFilesInDir(String_concat(Server_getPath(), "\filmeditor"))
+
+      set {_string} to ""
+
+      loop {_files::*}:
+        add 1 to {_i}
+        set {_file} to Files_getRelativePath(loop-value)
+        replace first "\" in {_file} with ""
+        if {_i} = size of {_files::*}:
+          set {_string} to String_concat({_string}, """%{_file}%""")
+        else:
+          set {_string} to String_concat({_string}, """%{_file}%""", ", ")
+
+      respond with code 200 and message "[%{_string}%]"
+
+  make endpoint using {film_editor::server}:
+    method: "GET"
+    path: "file"
+    trigger:
+      set {_r} to last exchange
+      set {_path} to parameter of {_r} by key "path"
+
+      if {_path} is not set:
+        respond with code 400 and message "Missing 'path' parameter"
+        stop
+      set {_path} to prevent_backtracking({_path})
+      set {_content} to Files_getRelativeFileContent("/filmeditor/%{_path}%")
+
+      if {_content} is "File not found":
+        respond with code 404 and message "File not found"
+        stop
+
+      respond with code 200 and message {_content}
+
+  make endpoint using {film_editor::server}:
+    method: "GET"
+    path: "status"
+    trigger:
+      respond with code 200 and message "OK"
+
+  start http {film_editor::server}
+
+on unload:
+  stop http {film_editor::server}
+  delete {film_editor::server}

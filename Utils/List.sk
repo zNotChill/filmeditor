@@ -1,0 +1,12 @@
+
+import:
+  java.util.ArrayList
+
+function List_removeEmptyEntries(list: strings) :: strings:
+  set {_formattedList::*} to new ArrayList()
+  
+  loop {_list::*}:
+    if loop-value != "":
+      add loop-value to {_formattedList::*}
+  
+  return {_formattedList::*}

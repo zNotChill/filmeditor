@@ -48,6 +48,9 @@ Make FilmEditor yours.
       "invalid_metadata": "&fConfig file contains invalid metadata.",
       "missing_version": "{messages::config::invalid_metadata} {secol}(missing version)",
       "incompatible": "&fConfig file version is incompatible with this version of {col}FilmEditor. {messages::expected_value}"
+    },
+    "webserver": {
+      "started": "&fWeb server started on port {col}{0}&f."
     }
   }
 }
