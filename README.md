@@ -27,7 +27,7 @@ Make FilmEditor yours.
   },
   "messages": {
     "unknown_command": "&fUnknown command &b{0}&f. Type &b/filmhelp &ffor editor help.",
-    "expected_value": "&f(Expected {errcol}{0}&f, got {errcol}{1}&f.)",
+    "expected_value": "&f(Expected {errcol}{0}&f, got {errcol}{1}&f)",
     "scene_load": {
       "success": "&fLoaded scene JSON for scene {col}{0}&f.",
       "does_not_exist": "&fScene file {errcol}{0}.json&f does not exist.",

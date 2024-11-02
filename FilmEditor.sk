@@ -90,15 +90,15 @@ function Config_load() :: boolean:
   map json {_content} to {_conf::*}
 
   if {_content} is not set:
-    Editor_announce(formatConfigValue("messages::config::does_not_exist"))
+    Editor_announce(formatConfigValue("messages::config::does_not_exist"), "error")
     return false
 
   # Check for invalid metadata
   if {_conf::film_editor::version} is not set:
-    Editor_announce(formatConfigValue("messages::config::missing_version"))
+    Editor_announce(formatConfigValue("messages::config::missing_version"), "error")
     return false
   if {_conf::film_editor::version} is not {film_editor::version}:
-    Editor_announce(formatConfigValue("messages::config::incompatible", {film_editor::version}, {_conf::film_editor::version}))
+    Editor_announce(formatConfigValue("messages::config::incompatible", "%{film_editor::version}%", "%{_conf::film_editor::version}%"), "error")
     return false
 
   set {film_editor::color} to "<%{_conf::film_editor::main_color}%>"
@@ -108,3 +108,8 @@ function Config_load() :: boolean:
 
   Editor_announce(formatConfigValue("messages::config::success"))
   return true
+
+command /reloadconfig:
+  permission: filmeditor.reloadconfig
+  trigger:
+    Config_load()
