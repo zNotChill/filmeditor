@@ -38,7 +38,7 @@ Make FilmEditor yours.
       "missing_version": "{messages::scene_load::invalid_metadata} {errcol}(missing version)",
       "missing_name": "{messages::scene_load::invalid_metadata} {errcol}(missing name)",
       "incompatible": "&fScene file {errcol}{0}&f's version is incompatible with this version of {errcol}FilmEditor. {messages::expected_value}",
-      "long_film_warning": "&fScene file {warncol}{0}&f contains a lot of events. This can cause issues. If you want to remove this message, add {warncol}\"long_film_warning\": false &fto the {warncol}overrides &fobject inside the {warncol}film_editor &fblock of your scene file. See <url:https://github.com/zNotChill/filmeditor#config>{warncol}&nthe config&f for help.",
+      "long_film_warning": "&fScene file {warncol}{0}&f contains a lot of events. This can cause issues. If you want to remove this message, add {warncol}\"long_film_warning\": false &fto the {warncol}overrides &fobject inside the {warncol}film_editor &fblock of your scene file. See <url:https://github.com/zNotChill/filmeditor?tab=readme-ov-file#scene-config>{warncol}&nthe config&f for help.",
       "found_events": "&fFound {col}{0} &fevent(s) in scene {col}{1}&f."
     },
     "scene_render": {
