@@ -16,6 +16,9 @@ Make FilmEditor yours.
 > [!IMPORTANT]
 > Selectors such as `{messages::scene_load::invalid_metadata}` internally refer to the config value of `messages.scene_load.invalid_metadata`. You can use these selectors to refer to any value of the config.json file, but the rule is that each nest should be represented using `::` instead of a `.`
 
+> [!IMPORTANT]
+> The file location is `filmeditor/config.json`.
+
 ```json
 {
   "film_editor": {
@@ -61,4 +64,131 @@ Make FilmEditor yours.
     }
   }
 }
+```
+
+
+# Scene Config
+
+> [!IMPORTANT]
+> All scenes should be inside the `filmeditor/scenes` directory.
+
+## Example Scene Config
+```json
+{
+  "film_editor": {
+    "version": 1.1,
+    "author": "zNotChill",
+    "description": "a cool film!",
+    "name": "alpha",
+    "overrides": {
+      "long_film_warning": true
+    }
+  },
+  "events": {
+    "on_tick": [
+      {
+        "run_at": 0,
+        "run": {
+          "events": [
+            {
+              "type": "set_time",
+              "value": "19:00"
+            }
+          ],
+          "nodes": [
+            {
+              "type": "camera",
+              "position": [-415.5, 88, 368.5, "world", -90, 0],
+              "node_name": "camera",
+              "run_physics": true,
+              "spawn": true
+            },
+            {
+              "type": "ent_ball",
+              "position": [-405.5, 88.1, 377.5, "world", 0, 0],
+              "data": {
+                "radius": 0.5,
+                "density": 6,
+                "blocks": [
+                  "purpur_block"
+                ],
+                "block_size": 0.8
+              },
+              "node_name": "ball",
+              "spawn": true
+            }
+          ]
+        }
+      },
+      {
+        "run_at": 10,
+        "run": {
+          "events": [
+            {
+              "type": "announce",
+              "value": "it is tick 10"
+            }
+          ],
+          "nodes": [
+            {
+              "type": "move",
+              "node_name": "camera",
+              "data": {
+                "velocity": [7, 0, 0],
+                "duration": 100
+              },
+              "update": true
+            }
+          ]
+        }
+      }
+    ]
+  }
+}
+```
+
+# Data Types
+
+## Event
+
+```ts
+interface Event {
+  type: Events,
+  value: string | number
+}
+
+type Events = {
+  "set_time",
+  "announce"
+}
+```
+
+## Node
+
+```ts
+interface Node {
+  type: Node,
+  position: MinecraftLocation,
+  node_name: string,
+  run_physics: boolean,
+  spawn: boolean,
+  data: NodeData,
+  update: boolean
+}
+
+interface NodeData {
+  radius?: number,
+  density?: number,
+  blocks?: string[],
+  block_size?: number,
+  velocity?: Vector3,
+  duration?: number
+}
+```
+
+## Misc Types
+
+```ts
+type MinecraftLocation = [number, number, number, string, number, number];
+type Vector3 = [number, number, number];
 ```
