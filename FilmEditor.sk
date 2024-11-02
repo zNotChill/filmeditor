@@ -11,7 +11,7 @@ import:
   java.util.ArrayList
 
 on script load:
-  set {film_editor::version} to 1
+  set {film_editor::version} to 1.1
   Config_load()
   Utils_checkPlugins()
 

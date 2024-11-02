@@ -19,20 +19,27 @@ Make FilmEditor yours.
 ```json
 {
   "film_editor": {
-    "version": 1,
+    "version": 1.1,
     "main_color": "#6ba7fa",
-    "secondary_color": "#236fff"
+    "secondary_color": "#236fff",
+    "error_main_color": "#fa6b6b",
+    "warning_main_color": "#ff8223"
   },
   "messages": {
     "unknown_command": "&fUnknown command &b{0}&f. Type &b/filmhelp &ffor editor help.",
-    "expected_value": "&f(Expected {col}{0}&f, got {col}{1}&f.)",
+    "expected_value": "&f(Expected {errcol}{0}&f, got {errcol}{1}&f.)",
     "scene_load": {
       "success": "&fLoaded scene JSON for scene {col}{0}&f.",
-      "does_not_exist": "&fScene file {col}{0}.json&f does not exist.",
-      "invalid_metadata": "&fScene file {col}{0}&f contains invalid metadata.",
-      "missing_version": "{messages::scene_load::invalid_metadata} {secol}(missing version)",
-      "missing_name": "{messages::scene_load::invalid_metadata} {secol}(missing name)",
-      "incompatible": "&fScene file {col}{0}&f's version is incompatible with this version of {col}FilmEditor. {messages::expected_value}"
+      "does_not_exist": "&fScene file {errcol}{0}.json&f does not exist.",
+      "invalid_metadata": "&fScene file {errcol}{0}&f contains invalid metadata.",
+      "missing_version": "{messages::scene_load::invalid_metadata} {errcol}(missing version)",
+      "missing_name": "{messages::scene_load::invalid_metadata} {errcol}(missing name)",
+      "incompatible": "&fScene file {errcol}{0}&f's version is incompatible with this version of {errcol}FilmEditor. {messages::expected_value}",
+      "long_film_warning": "&fScene file {warncol}{0}&f contains a lot of events. This can cause issues. If you want to remove this message, add {warncol}\"long_film_warning\": false &fto the {warncol}overrides &fobject inside the {warncol}film_editor &fblock of your scene file. See <url:https://github.com/zNotChill/filmeditor#config>{warncol}&nthe config&f for help.",
+      "found_events": "&fFound {col}{0} &fevent(s) in scene {col}{1}&f."
+    },
+    "scene_render": {
+      "rendered_events": "&fRendered {col}{0}&f event(s) at tick {col}{1}&f."
     },
     "dependencies": {
       "checking": "&fChecking for required Skript addons...",
@@ -44,10 +51,10 @@ Make FilmEditor yours.
     },
     "config": {
       "success": "&fLoaded config file.",
-      "does_not_exist": "&fConfig file does not exist. Should be located at {col}filmeditor/config.json&f.",
+      "does_not_exist": "&fConfig file does not exist. Should be located at {errcol}filmeditor/config.json&f.",
       "invalid_metadata": "&fConfig file contains invalid metadata.",
-      "missing_version": "{messages::config::invalid_metadata} {secol}(missing version)",
-      "incompatible": "&fConfig file version is incompatible with this version of {col}FilmEditor. {messages::expected_value}"
+      "missing_version": "{messages::config::invalid_metadata} {errcol}(missing version)",
+      "incompatible": "&fConfig file version is incompatible with this version of {errcol}FilmEditor. {messages::expected_value}"
     },
     "webserver": {
       "started": "&fWeb server started on port {col}{0}&f."
