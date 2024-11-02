@@ -22,6 +22,7 @@ on load:
     path: "scene"
     trigger:
       set {_r} to last exchange
+      Server_applyHeaders({_r})
       set {_path} to parameter of {_r} by key "path"
 
       if {_path} is not set:
@@ -42,6 +43,9 @@ on load:
     method: "GET"
     path: "config"
     trigger:
+      set {_r} to last exchange
+      Server_applyHeaders({_r})
+
       set {_path} to Paths.get("filmeditor/config.json")
       set {_content} to Files.readString({_path})
 
@@ -55,6 +59,9 @@ on load:
     method: "GET"
     path: "files"
     trigger:
+      set {_r} to last exchange
+      Server_applyHeaders({_r})
+
       set {_files::*} to Files_recGetFilesInDir(String_concat(Server_getPath(), "\filmeditor"))
 
       set {_string} to ""
@@ -63,10 +70,14 @@ on load:
         add 1 to {_i}
         set {_file} to Files_getRelativePath(loop-value)
         replace first "\" in {_file} with ""
+        replace first "filmeditor\" in {_file} with ""
         if {_i} = size of {_files::*}:
           set {_string} to String_concat({_string}, """%{_file}%""")
         else:
           set {_string} to String_concat({_string}, """%{_file}%""", ", ")
+
+        set {_string} to Files_fixPath({_string})
+        set {_string} to Files_fixBackslashes({_string})
 
       respond with code 200 and message "[%{_string}%]"
 
@@ -75,6 +86,7 @@ on load:
     path: "file"
     trigger:
       set {_r} to last exchange
+      Server_applyHeaders({_r})
       set {_path} to parameter of {_r} by key "path"
 
       if {_path} is not set:
@@ -93,9 +105,15 @@ on load:
     method: "GET"
     path: "status"
     trigger:
+      set {_r} to last exchange
+      Server_applyHeaders({_r})
+
       respond with code 200 and message "OK"
 
   start http {film_editor::server}
+
+function Server_applyHeaders(request: http exchange):
+  set header of {_request} by key "Access-Control-Allow-Origin" to "*"
 
 on unload:
   stop http {film_editor::server}

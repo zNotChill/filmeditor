@@ -54,6 +54,9 @@ function formatConfigString(string: string, 0: string = "", 1: string = "") :: s
   replace all "{col}" in {_str} with {film_editor::color}
   replace all "{secol}" in {_str} with {film_editor::color2}
 
+  replace all "{errcol}" in {_str} with {film_editor::error_color}
+  replace all "{warncol}" in {_str} with "<%{film_editor::config::film_editor::warning_main_color}%>"
+
   replace all "{0}" in {_str} with {_0}
   replace all "{1}" in {_str} with {_1}
 

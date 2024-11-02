@@ -18,60 +18,91 @@ function Scene_loadFile(name: string) :: boolean:
 
   # if size of {scene::%{_fileName}%::json::*} is 0:
   if {_content} is not set:
-    Editor_announce(formatConfigValue("messages::scene_load::does_not_exist", {_name}))
+    Editor_announce(formatConfigValue("messages::scene_load::does_not_exist", {_name}), "error")
     return false
 
   if {scene::%{_fileName}%::json::film_editor::version} is not set:
-    Editor_announce(formatConfigValue("messages::scene_load::missing_version"))
+    Editor_announce(formatConfigValue("messages::scene_load::missing_version"), "error")
     return false
   if {scene::%{_fileName}%::json::film_editor::name} is not set:
-    Editor_announce(formatConfigValue("messages::scene_load::missing_name"))
+    Editor_announce(formatConfigValue("messages::scene_load::missing_name"), "error")
     return false
 
   if {scene::%{_fileName}%::json::film_editor::version} is not {film_editor::version}:
-    Editor_announce(formatConfigValue("messages::scene_load::incompatible", {film_editor::version}, {scene::%{_fileName}%::json::film_editor::version}))
+    Editor_announce(formatConfigValue("messages::scene_load::incompatible", {film_editor::version}, {scene::%{_fileName}%::json::film_editor::version}), "error")
     return false
 
-  Scene_parseEvents({_fileName}, {_content})
+  set {scene::%{_fileName}%::doneRendering} to false
+  set {scene::%{_fileName}%::foundOverallEvents} to Scene_getTotalEvents({_fileName}, {_content})
+  set {scene::%{_fileName}%::renderedFrames} to 0
+  set {_ticks} to 0
+  Editor_announce(formatConfigValue("messages::scene_load::found_events", "%{scene::%{_fileName}%::foundOverallEvents}%", {_fileName}))
+
+  set {_eventLimit} to false
+  set {_eventLimitAmount} to 1
+  
+  if {scene::%{_fileName}%::foundOverallEvents} > {_eventLimitAmount}:
+    if {scene::%{_fileName}%::json::film_editor::overrides::long_film_warning} = false:
+      set {_eventLimit} to true
+    if {scene::%{_fileName}%::json::film_editor::overrides::long_film_warning} is not set:
+      set {_eventLimit} to true
+
+  if {_eventLimit} = true:
+    Render_announce(formatConfigValue("messages::scene_load::long_film_warning", {_fileName}), "warning")
+
+  while {scene::%{_fileName}%::renderedFrames} < {scene::%{_fileName}%::foundOverallEvents}:
+    Scene_parseAndRunEvents({_fileName}, {_content}, {_ticks})
+    add 1 to {_ticks}
+    wait a tick
 
   Editor_announce(formatConfigValue("messages::scene_load::success", {_fileName}))
-  return true
 
 function Scene_runEvent(json: objects) :: boolean:
   broadcast "%{_json::type}%"
 
-function Scene_parseEvents(name: string, json: string) :: boolean:
+function Scene_getTotalEvents(name: string, json: string) :: integer:
+  map json {_json} to {_json::*}
+  return size of {_json::events::on_tick::*}
+
+function Scene_parseAndRunEvents(name: string, json: string, time: integer = 0) :: boolean:
   map json {_json} to {_json::*}
   
   loop {_json::events::on_tick::*}:
     add 1 to {_i}
     set {_tickRunAt} to {_json::events::on_tick::%{_i}%::run_at}
+    set {_tickRunAt} to "%{_tickRunAt}%" parsed as integer
+    set {_nextEventTime} to {_tickRunAt}
 
-    set {_nonListEventRunOptions::*} to "time"
-    set {_listEventRunOptions::*} to "nodes"
+    if {_tickRunAt} is not {_time}:
+      continue
+
+    add 1 to {_eventsThisFrame}
+
+    set {_listEventRunOptions::*} to "nodes", "events"
     loop {_json::events::on_tick::%{_i}%::run::*}:
-      loop {_nonListEventRunOptions::*}:
-        set {_evValue} to {_json::events::on_tick::%{_i}%::run::%loop-value-3%}
-        set {_evTag} to loop-value-3
-
-        if:
-          {_evTag} = "time"
-          {_evValue} is set
-        then:
-          Editor_announce("Setting time of day to {col}%{_evValue}%")
-          Render_timeOfDay({_evValue})
-          
-
+      # Parse "nodes" and "run" events!!!!!!
       loop {_listEventRunOptions::*}:
         set {_evListValue::*} to {_json::events::on_tick::%{_i}%::run::%loop-value-3%::*}
         set {_evTag} to loop-value-3
+        add 1 to {_foundOverallEvents}
 
         if:
           {_evTag} = "nodes"
           {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} is not set
         then:
-          broadcast "nodes loloooll"
-
           broadcast "%{_json::events::on_tick::%{_i}%::run::nodes::*}%"
-
           set {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} to true
+
+        if:
+          {_evTag} = "events"
+          {scene::%{_name}%::tick_events::%{_tickRunAt}%::events_initialized} is not set
+        then:
+          loop {_json::events::on_tick::%{_i}%::run::events::*}:
+            set {_ev} to loop-value-4
+            broadcast "Running event %{_ev}%"
+            Scene_runEvent({_ev})
+          set {scene::%{_name}%::tick_events::%{_tickRunAt}%::events_initialized} to true
+
+  if {_eventsThisFrame} > 0:
+    Render_announce(formatConfigValue("messages::scene_render::rendered_events", "%{_eventsThisFrame}%", "%{_time}%"))
+    add 1 to {scene::%{_name}%::renderedFrames}

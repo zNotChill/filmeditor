@@ -58,3 +58,12 @@ function Files_getRelativeFileContent(relative_path: string) :: string:
   if {_content} is not set:
     return "File not found"
   return {_content}
+
+function Files_fixPath(path: string) :: string:
+  replace all "/" in {_path} with "\\"
+  replace all "\" in {_path} with "\\"
+  return {_path}
+
+function Files_fixBackslashes(path: string) :: string:
+  replace all "\\" in {_path} with "/"
+  return {_path}

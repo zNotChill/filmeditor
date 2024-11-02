@@ -20,11 +20,16 @@ on script load:
 function Server_getPath() :: string:
   return {film_editor::server_path}
 
-function Render_announce(str: string):
-  broadcast formatted "%{film_editor::color2}%[RENDER] &f%{_str}%"
+function Render_announce(str: string, message_type: string = "info", prefix: string = "RENDER"):
+  Editor_announce({_str}, {_message_type}, {_prefix})
 
-function Editor_announce(str: string):
-  broadcast formatted "%{film_editor::color}%[FILMEDITOR] &f%{_str}%"
+function Editor_announce(str: string, message_type: string = "info", prefix: string = "FILMEDITOR"):
+  set {_color} to {film_editor::color}
+  if {_message_type} = "error":
+    set {_color} to {film_editor::error_color}
+  if {_message_type} = "warning":
+    set {_color} to "<%{film_editor::config::film_editor::warning_main_color}%>"
+  broadcast formatted "%{_color}%[%{_prefix}%] &f%formatConfigString({_str})%"
 
 on server list ping:
   set the motd to formatted "%{film_editor::color}%&lFILMEDITOR %{film_editor::color2}%v%{film_editor::version}%"
@@ -98,6 +103,8 @@ function Config_load() :: boolean:
 
   set {film_editor::color} to "<%{_conf::film_editor::main_color}%>"
   set {film_editor::color2} to "<%{_conf::film_editor::secondary_color}%>"
+  set {film_editor::error_color} to "<%{_conf::film_editor::error_main_color}%>"
+  set {film_editor::error_color2} to "<%{_conf::film_editor::error_secondary_color}%>"
 
   Editor_announce(formatConfigValue("messages::config::success"))
   return true
