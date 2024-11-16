@@ -8,6 +8,8 @@ function Camera_spawn(loc: location, p: player) :: entity:
   spawn armor stand at {_loc}
   set {_camera} to last spawned armor stand
   set {camera::entity} to {_camera}
+  set {_id} to "%randomID(10)%"
+  set {camera::id} to "%randomID(10)%"
 
   Camera_setup({_loc}, {_p}, {_camera})
 

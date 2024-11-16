@@ -153,7 +153,7 @@ function jaja(p: player):
       set {_p}'s spectator target to {camera::entity}
       Camera_moveVector(vector(0, 0, 2), 200)
 
-    Camera_runPhysics(1)
+    Camera_runPhysics(1, {camera::id})
     wait 1 tick
 
 function infiniteelevator(p: player):
@@ -173,5 +173,5 @@ function infiniteelevator(p: player):
       teleport {camera::entity} to {_cameraLoc}
       set {_p}'s spectator target to {camera::entity}
 
-    Camera_runPhysics(1)
+    Camera_runPhysics(1, {camera::id})
     wait 1 tick

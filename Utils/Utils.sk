@@ -1,0 +1,61 @@
+import:
+  java.io.File
+  java.util.ArrayList
+  java.nio.file.DirectoryStream
+  java.nio.file.Files
+  java.nio.file.Paths
+function List_removeEmptyEntries(list: strings) :: strings:
+  set {_formattedList::*} to new ArrayList()
+  loop {_list::*}:
+    if loop-value != "":
+      add loop-value to {_formattedList::*}
+  return {_formattedList::*}
+function Server_getPath() :: string:
+  return new File(".").getCanonicalPath()
+function File_preventBacktracking(path: string) :: string:
+  if {_path} contains "..":
+    replace all ".." in {_path} with ""
+  if {_path} starts with "/":
+    replace first "/" in {_path} with ""
+  return {_path}
+function File_fixPath(path: string) :: string:
+  replace all "/" in {_path} with "\\"
+  replace all "\" in {_path} with "\\"
+  return {_path}
+function File_fixBackslashes(path: string) :: string:
+  replace all "\\" in {_path} with "/"
+  return {_path}
+function File_recGetFilesInDir(path: string) :: strings:
+  set {_file} to new File({_path})
+  set {_files} to {_file}.listFiles()
+  set {_files::*} to File_formatFileList("%{_files}%")
+  loop {_files::*}:
+    add 1 to {_i}
+    if {_i} > 100:
+      return List_removeEmptyEntries({_formattedFiles::*})
+    set {_fileCast} to new File(loop-value)
+    if {_fileCast}.isFile():
+      add loop-value to {_formattedFiles::*}
+    else:
+      set {_subFiles::*} to File_recGetFilesInDir(loop-value)
+      add {_subFiles::*} to {_formattedFiles::*}
+  return List_removeEmptyEntries({_formattedFiles::*})
+function File_getRelativePath(path: string) :: string:
+  replace Server_getPath() in {_path} with ""
+  return {_path}
+function File_getRelativeFileContent(relative_path: string) :: object:
+  set {_path} to try Paths.get(File_preventBacktracking(Server_getPath() + "\\%{_relative_path}%"))
+  set {_content} to try Files.readString({_path})
+  if {_content} is not set:
+    return false
+  return {_content}
+function File_formatFileList(fileList: string) :: strings:
+  set {_files::*} to split {_fileList} by ","
+  set {_formattedFiles::*} to new ArrayList()
+  loop {_files::*}:
+    set {_file} to loop-value
+    replace all "[" in {_file} with ""
+    replace all "]" in {_file} with ""
+    replace first " " in {_file} with ""
+    add {_file} to {_formattedFiles::*}
+  return {_formattedFiles::*}

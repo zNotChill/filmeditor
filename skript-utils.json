@@ -1,0 +1,17 @@
+{
+  "commentChar": "#",
+  "indentChar": "SPACE",
+  "indentSize": 2,
+  "codeDir": "D:\\minecraftnw\\filmeditor\\plugins\\Skript\\scripts",
+  "outputDir": "Utils",
+  "outputFileName": "Utils.sk",
+  "ignoredFiles": [],
+  "ignoredDirectories": [
+    "node_modules",
+    ".git",
+    ".vscode"
+  ],
+  "parser": {
+    "removeComments": true
+  }
+}

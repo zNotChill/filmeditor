@@ -1,4 +1,0 @@
-
-# wtf
-function String_concat(str1: string = "", str2: string = "", str3: string = "", str4: string = "", str5: string = "", str6: string = "", str7: string = "", str8: string = "", str9: string = "", str10: string = "") :: string:
-  return "%{_str1}%%{_str2}%%{_str3}%%{_str4}%%{_str5}%%{_str6}%%{_str7}%%{_str8}%%{_str9}%%{_str10}%"

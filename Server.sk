@@ -3,14 +3,6 @@ import:
   java.nio.file.Path
   java.nio.file.Paths
 
-# Prevent backtracking to the root directory
-function prevent_backtracking(path: string) :: string:
-  if {_path} contains "..":
-    replace all ".." in {_path} with ""
-  if {_path} starts with "/":
-    replace first "/" in {_path} with ""
-  return {_path}
-
 on load:
   set {_port} to 9158
   set {film_editor::server} to new http server with port {_port}
@@ -28,7 +20,7 @@ on load:
       if {_path} is not set:
         respond with code 400 and message "Missing 'path' parameter"
         stop
-      set {_path} to prevent_backtracking({_path})
+      set {_path} to File_preventBacktracking({_path})
 
       set {_path} to Paths.get("filmeditor/scenes/%{_path}%.json")
       set {_content} to Files.readString({_path})
@@ -62,22 +54,22 @@ on load:
       set {_r} to last exchange
       Server_applyHeaders({_r})
 
-      set {_files::*} to Files_recGetFilesInDir(String_concat(Server_getPath(), "\filmeditor"))
+      set {_files::*} to File_recGetFilesInDir(Server_getPath() + "\filmeditor")
 
       set {_string} to ""
 
       loop {_files::*}:
         add 1 to {_i}
-        set {_file} to Files_getRelativePath(loop-value)
+        set {_file} to File_getRelativePath(loop-value)
         replace first "\" in {_file} with ""
         replace first "filmeditor\" in {_file} with ""
         if {_i} = size of {_files::*}:
-          set {_string} to String_concat({_string}, """%{_file}%""")
+          set {_string} to {_string} + """%{_file}%"""
         else:
-          set {_string} to String_concat({_string}, """%{_file}%""", ", ")
+          set {_string} to {_string} + """%{_file}%""" + ", "
 
-        set {_string} to Files_fixPath({_string})
-        set {_string} to Files_fixBackslashes({_string})
+        set {_string} to File_fixPath({_string})
+        set {_string} to File_fixBackslashes({_string})
 
       respond with code 200 and message "[%{_string}%]"
 
@@ -92,8 +84,8 @@ on load:
       if {_path} is not set:
         respond with code 400 and message "Missing 'path' parameter"
         stop
-      set {_path} to prevent_backtracking({_path})
-      set {_content} to Files_getRelativeFileContent("/filmeditor/%{_path}%")
+      set {_path} to File_preventBacktracking({_path})
+      set {_content} to File_getRelativeFileContent("/filmeditor/%{_path}%")
 
       if {_content} is "File not found":
         respond with code 404 and message "File not found"

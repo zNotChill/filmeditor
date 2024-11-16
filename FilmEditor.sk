@@ -17,9 +17,6 @@ on script load:
 
   set {film_editor::server_path} to new File(".").getCanonicalPath()
 
-function Server_getPath() :: string:
-  return {film_editor::server_path}
-
 function Render_announce(str: string, message_type: string = "info", prefix: string = "RENDER"):
   Editor_announce({_str}, {_message_type}, {_prefix})
 

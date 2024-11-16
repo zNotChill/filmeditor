@@ -1,7 +1,10 @@
 
-function Camera_runPhysics(ticks: integer):
+function Camera_runPhysics(ticks: integer, camera_id: string):
   set {_functionLifetime} to 0
   while {camera::entity} is alive:
+    if {camera::id} is not {_camera_id}:
+      Editor_announce(formatConfigValue("messages::node_id_outdated", "CAMERA_%{_camera_id}%"), "error")
+      stop loop
     if {_functionLifetime} >= {_ticks}:
       stop loop
 
