@@ -2,7 +2,7 @@
   "commentChar": "#",
   "indentChar": "SPACE",
   "indentSize": 2,
-  "codeDir": "D:\\minecraftnw\\filmeditor\\plugins\\Skript\\scripts",
+  "codeDir": "./",
   "outputDir": "Utils",
   "outputFileName": "Utils.sk",
   "ignoredFiles": [],
