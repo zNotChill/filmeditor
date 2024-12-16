@@ -227,13 +227,14 @@ every tick:
       if {_playerEditingFrame} > {_frameCount}:
         set {editmode::%loop-player%::frame} to 1
 
-every 10 second:
+every 10 seconds:
   loop all players:
     if {editmode::%loop-player%::editing} is true:
       set {_editingMovie} to {editmode::%loop-player%::movie}
       set {_playerEditingFrame} to {editmode::%loop-player%::frame}
 
-      Movie_saveFramesToDatabase({_editingMovie})
+      async run task 5 ticks later:
+        Movie_saveFramesToDatabase({_editingMovie})
 
 
 # on left click:
