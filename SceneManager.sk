@@ -1,0 +1,321 @@
+import:
+  java.io.IOException
+  java.nio.file.DirectoryStream
+  java.nio.file.Files
+  java.io.File
+  java.nio.file.Path
+  java.nio.file.Paths
+  java.util.ArrayList
+  java.util.List
+
+on script load:
+  set {server_path} to new File(".").getCanonicalPath()
+
+  set {_configPath} to Paths.get("%{server_path}%/config/parkour.json")
+  set {_content} to try Files.readString({_configPath})
+  if {_content} is not set:
+    broadcast "Config file not found"
+
+  map json {_content} to {_config::*}
+
+  set {-edb::conn} to mongo server with connection string "mongodb+srv://%{_config::mongo::username}%:%{_config::mongo::password}%@%{_config::mongo::host}%/?retryWrites=true&w=majority"
+
+  set {-edb::db} to mongo database "movies" of {-edb::conn}
+  set {-edb::data} to mongo collection "data" of {-edb::db}
+
+  if Mongo_checkForCollection("data") = false:
+    broadcast "&c&lERROR &7Data collection not found"
+    stop
+
+function Mongo_checkForCollection(collection: string) :: boolean:
+  set {_collections::*} to all mongo collections of {-edb::db}
+  
+  # broadcast "&c&lDEBUG &7%size of {_collections::*}% collection(s) in database"
+
+  loop {_collections::*}:
+    set {_v} to "%loop-value%"
+    replace " collection" in {_v} with ""
+    if {_collection} = {_v}:
+      return true
+
+  return false
+
+command /registermovie [<string>]:
+  permission: filmeditor.registermovie
+  trigger:
+    if arg-1 is not set:
+      send "&cPlease specify a movie name."
+      stop
+    if {movie::%arg-1%::exists} is true:
+      send "&cA movie with that name already exists."
+      stop
+    
+    send "&aCreated movie &b%arg-1%&a."
+    Movie_create(arg-1)
+
+    wait 2 seconds
+    teleport player to location(0, 100, 0, world "movie_%{movie::%arg-1%::id}%")
+
+command /deletemovie [<string>]:
+  permission: filmeditor.deletemovie
+  trigger:
+    if arg-1 is not set:
+      send "&cPlease specify a movie name."
+      stop
+    if {movie::%arg-1%::exists} is not set:
+      send "&cA movie with that name does not exist."
+      stop
+    if {movie::%arg-1%::exists} is false:
+      send "&cA movie with that name does not exist."
+      stop
+    
+    send "&aDeleted movie &b%arg-1%&a."
+
+    unload world "movie_%{movie::%arg-1%::id}%"
+    delete world file for "movie_%{movie::%arg-1%::id}%"
+    delete {movie::%arg-1%::*}
+
+command /editmovie [<string>]:
+  permission: filmeditor.editmovie
+  trigger:
+    if arg-1 is not set:
+      send "&cPlease specify a movie name."
+      stop
+    if {movie::%arg-1%::exists} is false:
+      send "&cA movie with that name does not exist."
+      stop
+    
+    if:
+      {editmode::%player%::editing} is true
+      {editmode::%player%::movie} is not arg-1
+    then:
+      send "&cYou are already editing another movie."
+      stop
+
+    if {editmode::%player%::movie} is arg-1:
+      send "&aDisabled movie editing mode."
+      delete {editmode::%player%::movie}
+      delete {editmode::%player%::editing}
+      stop
+
+    send "&aEnabled movie editing mode."
+    set {editmode::%player%::movie} to arg-1
+    set {editmode::%player%::editing} to true
+    set {editmode::%player%::frame} to 1
+
+    teleport player to location(0, 100, 0, world "movie_%{movie::%arg-1%::id}%")
+    # Movie_edit(arg-1, player)
+
+function Movie_create(name: string):
+  set {_id} to "%randomID(6)%"
+  set {movie::%{_name}%::exists} to true
+  set {movie::%{_name}%::id} to {_id}
+  set {movie::%{_name}%::frames} to 130300
+  set {movie::%{_name}%::frameRate} to 20
+  clear {movie::%{_name}%::entities::*}
+  clear {movie::%{_name}%::frameList::*}
+  clear {movie::%{_name}%::camera}
+
+  Movie_createInDatabase({_name})
+
+  set {_w} to a new world creator named "movie_%{_id}%"
+  set chunk generator of {_w} to chunk generator with id "movie_template"
+  set should generate structures option of {_w} to false
+  set should generate structures option of {_w} to false
+  set load on start option of {_w} to false
+  load world from creator {_w}
+
+function Movie_saveAllEntitiesToFrame(name: string, frame: integer):
+  delete {movie::%{_name}%::frameList::%{_frame}%::entities::*}
+  loop all entities in world "movie_%{movie::%{_name}%::id}%" where [input is not a player]:
+    set {_nbt} to nbt of loop-entity
+    set string tag "custom;EntityType" of {_nbt} to "%type of loop-entity%"
+    set float tag "custom;X" of {_nbt} to x coord of loop-entity
+    set float tag "custom;Y" of {_nbt} to y coord of loop-entity
+    set float tag "custom;Z" of {_nbt} to z coord of loop-entity
+    add {_nbt} to {movie::%{_name}%::frameList::%{_frame}%::entities::*}
+
+function Movie_loadFrameEntities(name: string, frame: integer) :: string:
+  if {movie::%{_name}%::frameList::%{_frame}%::entities::*} is not set:
+    return "No entities found|%{_frame}%"
+
+  kill all entities in world "movie_%{movie::%{_name}%::id}%" where [input is not a player]
+  loop {movie::%{_name}%::frameList::%{_frame}%::entities::*}:
+    set {_nbt} to loop-value
+    set {_type} to string tag "custom;EntityType" of {_nbt}
+    set {_type} to {_type} parsed as entity type
+
+    set {_x} to float tag "custom;X" of {_nbt}
+    set {_y} to float tag "custom;Y" of {_nbt}
+    set {_z} to float tag "custom;Z" of {_nbt}
+
+    set {_loc} to location({_x}, {_y}, {_z}, world "movie_%{movie::%{_name}%::id}%")
+
+    spawn {_type} at {_loc} with nbt {_nbt}
+
+function Movie_createInDatabase(name: string) :: boolean:
+  set {_id} to {movie::%{_name}%::id}
+  set {_frames} to {movie::%{_name}%::frames}
+  set {_frameRate} to {movie::%{_name}%::frameRate}
+
+  set {_doc} to a new mongo document
+
+  set mongo field "id" of {_doc} to {_id}
+  set mongo field "name" of {_doc} to {_name}
+  set mongo field "frames" of {_doc} to {_frames}
+  set mongo field "frameRate" of {_doc} to {_frameRate}
+  set mongo field "created" of {_doc} to unix timestamp of now
+
+  insert mongo document {_doc} into collection {-edb::data}
+
+function Movie_saveFramesToDatabase(name: string) :: boolean:
+  set {_docs::*} to all mongo documents of collection {-edb::data}
+  set {_filter} to mongosk filter where field "name" is {_name}
+  set {_doc} to first mongo document with filter {_filter} of collection {-edb::data}
+
+  if {_doc} is not set:
+    return false
+
+  set {_frameList} to a new mongo document
+
+  loop {movie::%{_name}%::frames} times:
+    set {_entities::*} to {movie::%{_name}%::frameList::%loop-number%::entities::*}
+    if {_entities::*} is not set:
+      continue
+    if size of {_entities::*} <= 0:
+      continue
+    set {_frameDoc} to a new mongo document
+    set mongo field "frame" of {_frameDoc} to {_frame}
+
+    set {_entitiesDoc} to a new mongo document
+
+    set {_entities} to 0
+    loop {_entities::*}:
+      add 1 to {_entities}
+      set mongo field "%{_entities}%" of {_entitiesDoc} to "%loop-value-2%"
+
+    set mongo field "entities" of {_frameDoc} to {_entitiesDoc}  
+    set mongo field "%loop-number%" of {_frameList} to {_frameDoc}
+
+  set mongo field "frameList" of {_doc} to {_frameList}
+
+  update mongo document {_doc} of collection {-edb::data}
+
+every tick:
+  loop all players:
+    if {editmode::%loop-player%::editing} is true:
+      set {_editingMovie} to {editmode::%loop-player%::movie}
+      
+      set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+      set {_frameCount} to {movie::%{_editingMovie}%::frames}
+
+      set {_playerEditingFrameSeconds} to {_playerEditingFrame} / {movie::%{_editingMovie}%::frameRate}
+
+      set {_isNewFrame} to false
+      set {_newFrameLabel} to ""
+      if {movie::%{_editingMovie}%::frameList::%{_playerEditingFrame}%::entities::*} is not set:
+        set {_isNewFrame} to true
+        set {_newFrameLabel} to " &a&l(NEW)"
+
+      send actionbar "&fFrame &b%{_playerEditingFrame}%&f/&b%{_frameCount}%%{_newFrameLabel}% &7| &b%{_playerEditingFrameSeconds}%s&f/&b%{movie::%{_editingMovie}%::frames} / {movie::%{_editingMovie}%::frameRate}%s &7| &b%{movie::%{_editingMovie}%::frameRate}%fps" to loop-player
+
+      # Copy all the entities from the previous frame to the current frame
+      if {_isNewFrame} is true:
+        Movie_saveAllEntitiesToFrame({_editingMovie}, {_playerEditingFrame} - 1)
+      else:
+        Movie_saveAllEntitiesToFrame({_editingMovie}, {_playerEditingFrame})
+      if {_playerEditingFrame} > {_frameCount}:
+        set {editmode::%loop-player%::frame} to 1
+
+every 10 second:
+  loop all players:
+    if {editmode::%loop-player%::editing} is true:
+      set {_editingMovie} to {editmode::%loop-player%::movie}
+      set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+
+      Movie_saveFramesToDatabase({_editingMovie})
+
+
+# on left click:
+#   loop all players:
+#     if {editmode::%loop-player%::editing} is true:
+#       set {_editingMovie} to {editmode::%loop-player%::movie}
+#       set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+#       set {_frameCount} to {movie::%{_editingMovie}%::frames}
+
+#       if {_playerEditingFrame} < {_frameCount}:
+#         add 1 to {editmode::%loop-player%::frame}
+#         play sound "entity.experience_orb.pickup" at pitch 2 at loop-player
+#       else:
+#         set {editmode::%loop-player%::frame} to 1
+
+# on right click:
+#   loop all players:
+#     if {editmode::%loop-player%::editing} is true:
+#       set {_editingMovie} to {editmode::%loop-player%::movie}
+#       set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+
+#       if {_playerEditingFrame} > 1:
+#         subtract 1 from {editmode::%loop-player%::frame}
+#         play sound "entity.experience_orb.pickup" at pitch 0 at loop-player
+#       else:
+#         set {editmode::%loop-player%::frame} to {movie::%{_editingMovie}%::frames}
+
+
+on item held change:
+  set {editmode::%player%::hotbarSlot} to index of selected hotbar slot
+  player is sneaking
+  wait 1 tick
+  set {_preIndex} to {editmode::%player%::hotbarSlot}
+  set {_postIndex} to index of selected hotbar slot
+
+  set {_diff} to {_postIndex} - {_preIndex}
+
+  set player's current hotbar slot to {editmode::%player%::hotbarSlot}
+  # broadcast "&aDiff: %{_diff}%"
+  if:
+    {_diff} > 0
+    {_diff} < 8
+  then:
+    loop abs({_diff}) times:
+      loop all players:
+        if {editmode::%loop-player%::editing} is true:
+          set {_editingMovie} to {editmode::%loop-player%::movie}
+          set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+          set {_frameCount} to {movie::%{_editingMovie}%::frames}
+
+          play sound "entity.experience_orb.pickup" at pitch 2 at loop-player
+          if {_playerEditingFrame} < {_frameCount}:
+            add 1 to {editmode::%loop-player%::frame}
+            Movie_loadFrameEntities({editmode::%player%::movie}, {editmode::%player%::frame})
+          else:
+            set {editmode::%loop-player%::frame} to 1
+  if:
+    {_diff} < 0
+    {_diff} > -8
+  then:
+    loop abs({_diff}) times:
+      loop all players:
+        if {editmode::%loop-player%::editing} is true:
+          set {_editingMovie} to {editmode::%loop-player%::movie}
+          set {_playerEditingFrame} to {editmode::%loop-player%::frame}
+
+          play sound "entity.experience_orb.pickup" at pitch 0 at loop-player
+          if {_playerEditingFrame} > 1:
+            subtract 1 from {editmode::%loop-player%::frame}
+            Movie_loadFrameEntities({editmode::%player%::movie}, {editmode::%player%::frame})
+          else:
+            set {editmode::%loop-player%::frame} to {movie::%{_editingMovie}%::frames}
+
+  set {editmode::%player%::hotbarSlot} to index of selected hotbar slot
+
+register chunk generator with id "movie_template":
+	chunk gen:
+		loop 16 times:
+			loop 16 times:
+				set {_x} to (loop-number-1) - 1
+				set {_z} to (loop-number-2) - 1
+
+				set chunkdata blocks within vector({_x}, 0, {_z}) and vector({_x}, {_n}, {_z}) to gray concrete
+	biome gen:
+		set chunkdata biome to plains

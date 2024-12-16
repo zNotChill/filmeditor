@@ -1,11 +1,11 @@
 
-# PlayerAnim_applyGravity
-# Apply gravity to the player model
+# @name PlayerAnim_applyGravity
+# @description Apply gravity to the player model
 #
-# @param id: The ID of the player model
-# @param force: The force of gravity
-# @param groundBuffer: The buffer distance between the player model and the ground
-# @return boolean: Whether or not gravity was applied successfully
+# @param {string} id - The ID of the player model
+# @param force - The force of gravity
+# @param groundBuffer - The buffer distance between the player model and the ground
+# @returns {boolean} - Whether or not gravity was applied successfully
 
 function PlayerAnim_applyGravity(id: string, force: number, groundBuffer: number) :: boolean:
   if {_force} < 0:
@@ -24,10 +24,10 @@ function PlayerAnim_applyGravity(id: string, force: number, groundBuffer: number
     set {player::%{_id}%::isFalling} to false
   return true
 
-# PlayerAnim_simulateLegMovement
-# Simulate leg movement for the player model
+# @name PlayerAnim_simulateLegMovement
+# @description Simulate leg movement for the player model
 #
-# @param id: The ID of the player model
+# @param {string} id - The ID of the player model
 function PlayerAnim_simulateLegMovement(id: string):
   if mod({player::%{_id}%::lifetime}, {-anim::leg_update_interval}) = 0:
     set interpolation start of {player::%{_id}%::legLeft} to 0
@@ -60,7 +60,7 @@ function PlayerAnim_setBodyRotation(id: string, yaw: number):
 
 function PlayerAnim_setBodyRotationQuat(id: string, rotation: quaternion):
   loop {player::%{_id}%::list::*}:
-    set display right rotation of loop-value to (display right rotation of loop-value) + {_rotation}
+    set display right rotation of loop-value to (display right rotation of loop-value) offset by {_rotation}
 
 function PlayerAnim_getFacingVector(id: string) :: vector:
   set {_yaw} to yaw of {player::%{_id}%::head}

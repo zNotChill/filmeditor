@@ -15,12 +15,12 @@ function Server_getPath() :: string:
 function File_preventBacktracking(path: string) :: string:
   if {_path} contains "..":
     replace all ".." in {_path} with ""
-  if {_path} starts with "/":
+  while {_path} starts with "/":
     replace first "/" in {_path} with ""
   return {_path}
 function File_fixPath(path: string) :: string:
-  replace all "/" in {_path} with "\\"
   replace all "\" in {_path} with "\\"
+  replace all "/" in {_path} with "\\"
   return {_path}
 function File_fixBackslashes(path: string) :: string:
   replace all "\\" in {_path} with "/"

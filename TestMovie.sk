@@ -175,3 +175,13 @@ function infiniteelevator(p: player):
 
     Camera_runPhysics(1, {camera::id})
     wait 1 tick
+
+function playera(p: player):
+  Render_reset()
+  Render_beginFrame()
+  set {_model} to PlayerAnim_spawnModel({_p}, false)
+  
+  while {player::%{_model}%::torso} is alive:
+    PlayerAnim_simulateLegMovement({_model})
+    PlayerAnim_runPhysics({_model}, 1)
+    wait a tick

@@ -1,0 +1,9 @@
+
+function Entities_getEntity(id: string) :: entity:
+  return {entities::%{_id}%::mainEntity}
+
+function Entity_setVelocity(id: string, vector: vector):
+  if {_id} = "camera":
+    set {camera::velocity} to {_vector}
+  else:
+    set {entities::%{_id}%::velocity} to {_vector}

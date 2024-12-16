@@ -7,13 +7,14 @@ function Scene_load(name: string):
   set {scene::name} to {_name}
   set {scene::currentFrame} to 0
 
-function Scene_loadFile(name: string) :: boolean:
+function Scene_loadFile(name: string, p: player) :: boolean:
   set {_path} to Paths.get("filmeditor/scenes/%{_name}%.json")
   set {_content} to Files.readString({_path})
   delete {scene::%{_name}%::*}
   map json {_content} to {-tempjson::*}
 
   set {_fileName} to {-tempjson::film_editor::name}
+  delete {scene::%{_fileName}%::*}
   map json {_content} to {scene::%{_fileName}%::json::*} # Re-map the JSON to the scene's name
 
   # if size of {scene::%{_fileName}%::json::*} is 0:
@@ -51,30 +52,29 @@ function Scene_loadFile(name: string) :: boolean:
     Render_announce(formatConfigValue("messages::scene_load::long_film_warning", {_fileName}), "warning")
 
   while {scene::%{_fileName}%::renderedFrames} < {scene::%{_fileName}%::foundOverallEvents}:
-    Scene_parseAndRunEvents({_fileName}, {_content}, {_ticks})
+    Scene_parseAndRunEvents({_fileName}, {_content}, {_ticks}, {_p})
     add 1 to {_ticks}
     wait a tick
 
   Editor_announce(formatConfigValue("messages::scene_load::success", {_fileName}))
 
-function Scene_runEvent(json: objects) :: boolean:
-  broadcast "%{_json::type}%"
-
 function Scene_getTotalEvents(name: string, json: string) :: integer:
   map json {_json} to {_json::*}
   return size of {_json::events::on_tick::*}
 
-function Scene_parseAndRunEvents(name: string, json: string, time: integer = 0) :: boolean:
+function Scene_parseAndRunEvents(name: string, json: string, time: integer = 0, p: player) :: boolean:
   map json {_json} to {_json::*}
   
-  # I hate skript so much
-  # This would be so much easier if Skript saved the named indexes of the object
-  # instead of the integer indexes
-  # 
-  # set {_test::*} to {_json::events::on_tick::*}
-  # 
-  # You would assume you could use {_test::events::*} right?
-  # hell no, you have to use the integer index {_test::1::*}
+  #! I hate skript so much
+  #! This would be so much easier if Skript saved the named indexes of the object
+  #! instead of the integer indexes
+  #! 
+  #! set {_test::*} to {_json::events::on_tick::*}
+  #! 
+  #! You would assume you could use {_test::events::*} right?
+  #! hell no, you have to use the integer index {_test::1::*}
+  #!
+  #! hence the AWFUL code below
 
   loop {_json::events::on_tick::*}:
     add 1 to {_i}
@@ -94,13 +94,65 @@ function Scene_parseAndRunEvents(name: string, json: string, time: integer = 0) 
         set {_evTag} to loop-value-3
         add 1 to {_foundOverallEvents}
 
-        broadcast "Running event %{_evTag}%"
-
         if:
           {_evTag} = "nodes"
           {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} is not set
         then:
-          broadcast "%{_json::events::on_tick::%{_i}%::run::nodes::*}%"
+          loop {_json::events::on_tick::%{_i}%::run::nodes::*}:
+            add 1 to {_nodeIndex}
+            set {_type} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::type}
+
+            set {_position::*} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::position::*}
+            set {_position} to location({_position::1}, {_position::2}, {_position::3}, world {_position::4}, {_position::5}, {_position::6})
+
+            set {_node_name} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::node_name}
+            set {_run_physics} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::run_physics}
+            set {_spawn} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::spawn}
+            set {_update} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::update}
+
+            set {_radius} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::radius}
+            set {_density} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::density}
+            set {_blocksUnparsed::*} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::blocks::*}
+            loop {_blocksUnparsed::*}:
+              set {_itemName} to loop-value-5
+              replace all "_" in {_itemName} with " "
+              add "%{_itemName}%" parsed as item to {_blocks::*}
+            
+            set {_block_size} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::block_size}
+
+            set {_velocity::*} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::velocity::*}
+            set {_velocity} to vector({_velocity::1}, {_velocity::2}, {_velocity::3})
+
+            set {_duration} to {_json::events::on_tick::%{_i}%::run::nodes::%{_nodeIndex}%::data::duration}
+
+            if {_spawn} = true:
+              if {scene::%{_name}%::nodes::*} does not contain {_node_name}:
+                add {_node_name} to {scene::%{_name}%::nodes::*}
+                
+              if {_type} = "camera":
+                set {_camera} to Camera_spawn({_position}, {_p})
+                Camera_setup({_position}, {_p}, {_camera})
+                set {scene::%{_name}%::nodes::%{_node_name}%::entity} to {_camera}
+                set {scene::%{_name}%::nodes::%{_node_name}%::entity_id} to "camera"
+                set {scene::%{_name}%::nodes::%{_node_name}%::type} to {_type}
+              if {_type} = "ent_ball":
+                set {_entID} to Entities_spawnBall({_position}, {_radius}, {_density}, {_blocks::*}, {_block_size})
+                set {_ent} to Entities_getEntity({_entID})
+                set {scene::%{_name}%::nodes::%{_node_name}%::entity} to {_ent}
+                set {scene::%{_name}%::nodes::%{_node_name}%::entity_id} to {_entID}
+                set {scene::%{_name}%::nodes::%{_node_name}%::blocks::*} to {_blocks::*}
+                set {scene::%{_name}%::nodes::%{_node_name}%::type} to {_type}
+            else if {_update} = true:
+              if {scene::%{_name}%::nodes::*} contains {_node_name}:
+                set {_id} to {scene::%{_name}%::nodes::%{_node_name}%::entity_id}
+                if {_velocity} is set:
+                  Entity_setVelocity({_id}, {_velocity})
+
+                  if {_id} = "camera":
+                    Camera_runPhysics({_duration}, {_id})
+                  else:
+                    Entity_runPhysics({scene::%{_name}%::nodes::%{_node_name}%::entity_id}, {_duration})
+              
           set {scene::%{_name}%::tick_events::%{_tickRunAt}%::nodes_initialized} to true
 
         if:
@@ -109,8 +161,6 @@ function Scene_parseAndRunEvents(name: string, json: string, time: integer = 0) 
         then:
           loop {_json::events::on_tick::%{_i}%::run::events::*}:
             set {_ev} to loop-value-4
-            broadcast "Running event %{_ev}%"
-            Scene_runEvent({_ev})
           set {scene::%{_name}%::tick_events::%{_tickRunAt}%::events_initialized} to true
 
   if {_eventsThisFrame} > 0:
